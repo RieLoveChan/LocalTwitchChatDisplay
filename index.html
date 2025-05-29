@@ -109,6 +109,8 @@
         #chatContainer {
             position: fixed;
             bottom: 0;
+            /* ... existing styles ... */
+            transition: transform 0.2s ease-out; 
             left: 0;
             right: 0;
             height: calc(100vh - 80px);
@@ -535,6 +537,10 @@
             <label>Horizontal Padding: <input type="range" id="generalHPadding" min="8" max="30" value="16" onchange="updateGeneralStyle()"><span id="generalHPaddingValue">16px</span></label>
             <label>Message Spacing: <input type="range" id="generalSpacing" min="2" max="15" value="8" onchange="updateGeneralStyle()"><span id="generalSpacingValue">8px</span></label>
         </div>
+
+        <div class="style-controls active" id="scaleControls">
+            <label for="chatScale">Chat Scale: <input type="range" id="chatScale" min="50" max="150" value="100" step="10" onchange="updateChatScale()"> <span id="chatScaleValue">100%</span></label>
+        </div>
         
         <div class="style-controls" id="vividControls">
             <label>Shadow Intensity: <input type="range" id="vividShadow" min="0" max="50" value="15" onchange="updateVividStyle()"><span id="vividShadowValue">15px</span></label>
@@ -572,6 +578,7 @@
             updateGeneralStyle(); 
             updateVividStyle();
             updateNicoSpeed(); // Initialize Nico speed display
+            updateChatScale(); // Initialize chat scale
             // Set initial timestamp visibility based on the checkbox state (default: hidden)
             toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
             connectToChannel(); // Attempt to connect to the default channel
@@ -584,6 +591,31 @@
             const controls = document.getElementById('controls');
             controlsVisible = !controlsVisible; // Flip the visibility state
             controls.style.display = controlsVisible ? 'flex' : 'none'; // Apply display style
+        }
+
+        /**
+         * Updates the chat container's scale based on the slider and updates the display value.
+         */
+        function updateChatScale() {
+            const scaleSlider = document.getElementById('chatScale');
+            const chatContainer = document.getElementById('chatContainer');
+            const scaleValueDisplay = document.getElementById('chatScaleValue');
+
+            if (scaleSlider && chatContainer && scaleValueDisplay) {
+                const scale = parseFloat(scaleSlider.value) / 100; // Convert percentage to decimal (e.g., 100 -> 1.0)
+                scaleValueDisplay.textContent = scaleSlider.value + '%';
+                chatContainer.style.transform = `scale(${scale})`;
+
+                // Set transform-origin based on scroll direction for better user experience
+                if (scrollDirection === 'horizontal' || scrollDirection === 'nico') {
+                    // For horizontal or nico, scaling from center might feel more natural
+                    // or top center if messages mainly flow through upper part.
+                    // Let's try center for these.
+                    chatContainer.style.transformOrigin = 'center center'; 
+                } else { // Vertical
+                    chatContainer.style.transformOrigin = 'bottom left'; // Scales from bottom-left for vertical chat
+                }
+            }
         }
 
         /**
@@ -833,9 +865,20 @@
                 messageDiv.style.top = randomTopPercent + '%'; 
                 messageDiv.style.left = chatContainer.offsetWidth + 'px'; // Start off-screen right
 
-                // Vary animation duration (optional but good for visual appeal)
-                const duration = Math.random() * 5 + 6; // Duration between 6s and 11s
-                messageDiv.style.animationDuration = duration + 's';
+                // Get duration from the Nico Speed slider
+                let nicoDuration = 8; // Default duration
+                const nicoSpeedSlider = document.getElementById('nicoSpeed');
+                if (nicoSpeedSlider) {
+                    let sliderValue = parseFloat(nicoSpeedSlider.value);
+                    // Validate against slider's min/max attributes if they exist, otherwise use reasonable defaults
+                    const minDuration = nicoSpeedSlider.hasAttribute('min') ? parseFloat(nicoSpeedSlider.min) : 1;
+                    const maxDuration = nicoSpeedSlider.hasAttribute('max') ? parseFloat(nicoSpeedSlider.max) : 30;
+
+                    if (!isNaN(sliderValue) && sliderValue >= minDuration && sliderValue <= maxDuration) {
+                        nicoDuration = sliderValue;
+                    }
+                }
+                messageDiv.style.animationDuration = nicoDuration + 's';
                 
                 chatContainer.appendChild(messageDiv);
 
