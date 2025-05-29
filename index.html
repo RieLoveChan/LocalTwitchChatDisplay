@@ -450,24 +450,17 @@
 
         <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps">Show Timestamps</label></div> <!-- Removed inline style, will be handled by .controls label -->
         
-        <div class="style-controls" id="bubbleControls">
-            <label>Transparency: <input type="range" id="bubbleOpacity" min="10" max="80" value="20" onchange="updateBubbleStyle()"><span id="bubbleOpacityValue">20%</span></label>
-            <label>Corner Radius: <input type="range" id="bubbleRadius" min="5" max="30" value="20" onchange="updateBubbleStyle()"><span id="bubbleRadiusValue">20px</span></label>
-            <label>Max Width: <input type="range" id="bubbleWidth" min="50" max="100" value="80" onchange="updateBubbleStyle()"><span id="bubbleWidthValue">80%</span></label>
-            <label>Vertical Padding: <input type="range" id="bubbleVPadding" min="5" max="25" value="12" onchange="updateBubbleStyle()"><span id="bubbleVPaddingValue">12px</span></label>
-            <label>Horizontal Padding: <input type="range" id="bubbleHPadding" min="8" max="30" value="16" onchange="updateBubbleStyle()"><span id="bubbleHPaddingValue">16px</span></label>
-            <label>Message Spacing: <input type="range" id="bubbleSpacing" min="2" max="15" value="8" onchange="updateBubbleStyle()"><span id="bubbleSpacingValue">8px</span></label>
-            <label>Blur Effect: <input type="range" id="bubbleBlur" min="0" max="20" value="10" onchange="updateBubbleStyle()"><span id="bubbleBlurValue">10px</span></label>
+        <div class="style-controls" id="generalStyleControls">
+            <label>Corner Radius: <input type="range" id="generalRadius" min="5" max="30" value="20" onchange="updateGeneralStyle()"><span id="generalRadiusValue">20px</span></label>
+            <label>Max Width: <input type="range" id="generalMaxWidth" min="50" max="100" value="80" onchange="updateGeneralStyle()"><span id="generalMaxWidthValue">80%</span></label>
+            <label>Vertical Padding: <input type="range" id="generalVPadding" min="5" max="25" value="12" onchange="updateGeneralStyle()"><span id="generalVPaddingValue">12px</span></label>
+            <label>Horizontal Padding: <input type="range" id="generalHPadding" min="8" max="30" value="16" onchange="updateGeneralStyle()"><span id="generalHPaddingValue">16px</span></label>
+            <label>Message Spacing: <input type="range" id="generalSpacing" min="2" max="15" value="8" onchange="updateGeneralStyle()"><span id="generalSpacingValue">8px</span></label>
         </div>
         
         <div class="style-controls" id="vividControls">
             <label>Shadow Intensity: <input type="range" id="vividShadow" min="0" max="50" value="15" onchange="updateVividStyle()"><span id="vividShadowValue">15px</span></label>
             <label>Border Width: <input type="range" id="vividBorder" min="0" max="8" value="4" onchange="updateVividStyle()"><span id="vividBorderValue">4px</span></label>
-            <label>Max Width: <input type="range" id="vividWidth" min="50" max="100" value="85" onchange="updateVividStyle()"><span id="vividWidthValue">85%</span></label>
-            <label>Vertical Padding: <input type="range" id="vividVPadding" min="5" max="25" value="10" onchange="updateVividStyle()"><span id="vividVPaddingValue">10px</span></label>
-            <label>Horizontal Padding: <input type="range" id="vividHPadding" min="8" max="30" value="14" onchange="updateVividStyle()"><span id="vividHPaddingValue">14px</span></label>
-            <label>Message Spacing: <input type="range" id="vividSpacing" min="2" max="15" value="8" onchange="updateVividStyle()"><span id="vividSpacingValue">8px</span></label>
-            <label>Corner Radius: <input type="range" id="vividRadius" min="0" max="20" value="8" onchange="updateVividStyle()"><span id="vividRadiusValue">8px</span></label>
         </div>
     </div>
 
@@ -494,7 +487,7 @@
             updateStyleControls(); // Show controls for the default style
             updateScrollDirection(); // Apply default scroll direction
             // Initialize display values for style-specific sliders
-            updateBubbleStyle(); 
+            updateGeneralStyle(); 
             updateVividStyle();
             // Set initial timestamp visibility based on the checkbox state (default: hidden)
             toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
@@ -795,22 +788,26 @@
          * Only one style control panel should be active and visible at a time.
          */
         function updateStyleControls() {
-            const bubbleControls = document.getElementById('bubbleControls');
+            const generalControls = document.getElementById('generalStyleControls');
             const vividControls = document.getElementById('vividControls');
             
             // Hide all style-specific controls first to ensure a clean state.
-            bubbleControls.classList.remove('active');
+            // generalControls.classList.remove('active'); // General is always active now
             vividControls.classList.remove('active');
             
-            // Show controls for the currently selected style.
-            if (currentStyle === 'bubble') {
-                bubbleControls.classList.add('active');
-                updateBubbleStyle(); // Ensure sliders and values reflect current bubble style state.
-            } else if (currentStyle === 'vivid') {
+            // Activate general controls for all styles (it should always be visible if any style is selected)
+            generalControls.classList.add('active');
+            updateGeneralStyle(); // Update general sliders to reflect current style or apply to new style
+
+            // Show controls for the currently selected style if specific controls exist.
+            if (currentStyle === 'vivid') {
                 vividControls.classList.add('active');
                 updateVividStyle(); // Ensure sliders and values reflect current vivid style state.
+            } else if (currentStyle === 'bubble') {
+                // Bubble specific controls were removed, but if we had a separate bubble panel, we'd activate it here.
+                // For now, bubble uses only general controls.
             }
-            // Other styles (e.g., 'light', 'pastel') might not have specific controls, so no panel is shown.
+            // Other styles (e.g., 'light', 'pastel') might not have specific controls beyond general.
         }
 
         /**
@@ -827,49 +824,43 @@
         }
         
         /**
-         * Updates the CSS for the 'bubble' chat message style based on slider values.
+         * Updates the general CSS properties (radius, width, padding, spacing) for the current chat message style.
          * Gets values from corresponding sliders, updates their display values,
          * then generates a CSS string and applies it dynamically to the page.
          */
-        function updateBubbleStyle() {
+        function updateGeneralStyle() {
             // Get values from sliders
-            const opacity = document.getElementById('bubbleOpacity').value;
-            const radius = document.getElementById('bubbleRadius').value;
-            const width = document.getElementById('bubbleWidth').value;
-            const vPadding = document.getElementById('bubbleVPadding').value;
-            const hPadding = document.getElementById('bubbleHPadding').value;
-            const spacing = document.getElementById('bubbleSpacing').value;
-            const blur = document.getElementById('bubbleBlur').value;
+            const radius = document.getElementById('generalRadius').value;
+            const width = document.getElementById('generalMaxWidth').value;
+            const vPadding = document.getElementById('generalVPadding').value;
+            const hPadding = document.getElementById('generalHPadding').value;
+            const spacing = document.getElementById('generalSpacing').value;
             
             // Update display values next to sliders for immediate user feedback
-            document.getElementById('bubbleOpacityValue').textContent = opacity + '%';
-            document.getElementById('bubbleRadiusValue').textContent = radius + 'px';
-            document.getElementById('bubbleWidthValue').textContent = width + '%';
-            document.getElementById('bubbleVPaddingValue').textContent = vPadding + 'px';
-            document.getElementById('bubbleHPaddingValue').textContent = hPadding + 'px';
-            document.getElementById('bubbleSpacingValue').textContent = spacing + 'px';
-            document.getElementById('bubbleBlurValue').textContent = blur + 'px';
+            document.getElementById('generalRadiusValue').textContent = radius + 'px';
+            document.getElementById('generalMaxWidthValue').textContent = width + '%';
+            document.getElementById('generalVPaddingValue').textContent = vPadding + 'px';
+            document.getElementById('generalHPaddingValue').textContent = hPadding + 'px';
+            document.getElementById('generalSpacingValue').textContent = spacing + 'px';
             
             // Construct CSS rules string. Using '!important' to ensure these dynamic styles
-            // override any base styles defined in the main <style> tag.
+            // override any base styles defined in the main <style> tag or specific theme styles.
             const style = `
-                .chat-message.bubble {
-                    background: rgba(255, 255, 255, ${opacity / 100}) !important;
-                    backdrop-filter: blur(${blur}px) !important;
+                .chat-message.${currentStyle} {
                     border-radius: ${radius}px !important;
                     max-width: ${width}% !important;
                     padding: ${vPadding}px ${hPadding}px !important;
                 }
                 /* Apply margin for spacing differently for vertical vs horizontal layouts */
-                #chatContainer:not(.horizontal) .chat-message.bubble {
+                #chatContainer:not(.horizontal) .chat-message.${currentStyle} {
                     margin: ${spacing / 2}px 0 !important; /* Vertical spacing (top/bottom) */
                 }
-                #chatContainer.horizontal .chat-message.bubble {
+                #chatContainer.horizontal .chat-message.${currentStyle} {
                     margin: 0 ${spacing / 2}px !important; /* Horizontal spacing (left/right) */
                 }
             `;
             
-            updateDynamicStyle('bubbleStyle', style); // Apply the generated CSS to a <style> tag
+            updateDynamicStyle('generalSharedStyle', style); // Apply the generated CSS to a <style> tag
         }
 
         /**
@@ -877,41 +868,23 @@
          * Similar to updateBubbleStyle, but for the 'vivid' style's specific controls.
          */
         function updateVividStyle() {
-            // Get values from sliders
+            // Get values from sliders for Vivid-specific properties
             const shadow = document.getElementById('vividShadow').value;
             const border = document.getElementById('vividBorder').value;
-            const width = document.getElementById('vividWidth').value;
-            const vPadding = document.getElementById('vividVPadding').value;
-            const hPadding = document.getElementById('vividHPadding').value;
-            const spacing = document.getElementById('vividSpacing').value;
-            const radius = document.getElementById('vividRadius').value;
             
             // Update display values next to sliders
             document.getElementById('vividShadowValue').textContent = shadow + 'px';
             document.getElementById('vividBorderValue').textContent = border + 'px';
-            document.getElementById('vividWidthValue').textContent = width + '%';
-            document.getElementById('vividVPaddingValue').textContent = vPadding + 'px';
-            document.getElementById('vividHPaddingValue').textContent = hPadding + 'px';
-            document.getElementById('vividSpacingValue').textContent = spacing + 'px';
-            document.getElementById('vividRadiusValue').textContent = radius + 'px';
             
-            // Construct CSS rules string for the 'vivid' style
+            // Construct CSS rules string for the 'vivid' style, only for its unique properties
             const style = `
                 .chat-message.vivid {
                     box-shadow: 0 4px ${shadow}px rgba(102, 126, 234, 0.3) !important;
                     border-left: ${border}px solid #9146ff !important;
-                    border-radius: ${radius}px !important;
-                    max-width: ${width}% !important;
-                    padding: ${vPadding}px ${hPadding}px !important;
-                }
-                 /* Apply margin for spacing differently for vertical vs horizontal layouts */
-                #chatContainer:not(.horizontal) .chat-message.vivid {
-                    margin: ${spacing / 2}px 0 !important; /* Vertical spacing */
-                }
-                #chatContainer.horizontal .chat-message.vivid {
-                    margin: 0 ${spacing / 2}px !important; /* Horizontal spacing */
                 }
             `;
+            // Shared properties like border-radius, max-width, padding, margin 
+            // are now handled by updateGeneralStyle() and its 'generalSharedStyle' CSS block.
             
             updateDynamicStyle('vividStyle', style); // Apply the generated CSS
         }
