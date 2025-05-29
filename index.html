@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Twitch Chat Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .usage-note {
+            text-align: center;
+            font-size: 0.9em;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .controls-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls-container label {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+
+        .controls-container input[type="text"],
+        .controls-container input[type="checkbox"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .controls-container input[type="checkbox"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .controls-container button {
+            padding: 10px 15px;
+            background-color: #6441a5; /* Twitch purple */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .controls-container button:hover {
+            background-color: #503480;
+        }
+
+        #chatContainer {
+            border: 1px solid #ccc;
+            height: 60vh; /* Using vh for responsiveness */
+            width: 100%;
+            max-width: 800px; /* Max width for larger screens */
+            margin: auto; /* Center the chat container */
+            background-color: #fff; /* Background for the container itself */
+        }
+    </style>
+</head>
+<body>
+    <!--
+        Twitch Chat Viewer - Usage Instructions
+
+        Description:
+        This HTML file displays Twitch chat for a specified channel using an iframe.
+
+        Critical Instructions for Running:
+        - IMPORTANT: This file needs to be served by a local web server to function correctly
+          due to Twitch's embedding policies (parent domain restriction).
+        - To run a simple local server if you have Python 3:
+          python3 -m http.server
+        - If you have Python 2:
+          python -m SimpleHTTPServer
+        - Alternatively, you can use extensions like 'Live Server' in VS Code.
+        - Once the server is running, open your browser and navigate to http://localhost:<port>
+          (e.g., http://localhost:8000 if you used the python server command).
+
+        How to Use:
+        1. Enter the Twitch channel name in the "Twitch Channel" input field.
+        2. Check the "Dark Mode" box if you prefer the dark theme for the chat.
+        3. Click the "Load Chat" button. The chat will appear below the controls.
+    -->
+    <h1>Twitch Chat Viewer</h1>
+
+    <p class="usage-note">Note: This page must be served by a local web server (e.g., using Python's <code>http.server</code> or VS Code's Live Server) for the Twitch chat to load.</p>
+
+    <div class="controls-container">
+        <label for="channelNameInput">Twitch Channel:</label>
+        <input type="text" id="channelNameInput" placeholder="Enter Twitch Channel Name">
+        <br>
+        <input type="checkbox" id="darkModeCheckbox">
+        <label for="darkModeCheckbox">Dark Mode</label>
+        <br>
+        <button id="loadChatButton">Load Chat</button>
+    </div>
+
+    <div id="chatContainer"></div>
+
+    <script>
+        function loadTwitchChat() {
+            const channelName = document.getElementById('channelNameInput').value;
+            if (!channelName) {
+                alert('Please enter a Twitch channel name.');
+                return;
+            }
+
+            const darkMode = document.getElementById('darkModeCheckbox').checked;
+            let iframeUrl = `https://www.twitch.tv/embed/${channelName}/chat?parent=localhost`;
+            if (darkMode) {
+                iframeUrl += '&darkpopout=true';
+            }
+
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.innerHTML = ''; // Clear previous iframe
+
+            const iframe = document.createElement('iframe');
+            iframe.src = iframeUrl;
+            iframe.height = '500px';
+            iframe.width = '100%';
+            iframe.setAttribute('frameborder', '0');
+            iframe.setAttribute('scrolling', 'no');
+            iframe.setAttribute('allowfullscreen', 'true');
+
+            chatContainer.appendChild(iframe);
+        }
+
+        document.getElementById('loadChatButton').addEventListener('click', loadTwitchChat);
+    </script>
+</body>
+</html>
