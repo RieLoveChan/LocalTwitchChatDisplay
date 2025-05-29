@@ -109,6 +109,8 @@
         #chatContainer {
             position: fixed;
             bottom: 0;
+            /* ... existing styles ... */
+            transition: transform 0.2s ease-out; 
             left: 0;
             right: 0;
             height: calc(100vh - 80px);
@@ -278,26 +280,33 @@
             position: fixed;
             top: 10px;
             right: 10px;
-            /* Keep the dark, minimal toggle button for contrast against page background */
-            background: rgba(40, 40, 40, 0.85); 
-            padding: 8px; /* Slightly smaller padding */
-            border-radius: 8px;
+            background: transparent; 
+            padding: 0; 
+            border-radius: 8px; /* Keep radius in case a border is added later directly to container */
             z-index: 1001; /* Ensure it's above the main controls panel */
         }
 
         .toggle-controls button {
-            padding: 8px 12px; /* Match other buttons a bit more */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background: transparent;
             border: none;
-            border-radius: 6px; /* Slightly smaller radius */
-            background: #555; /* Dark gray */
-            color: #efeff1; /* Light text */
+            color: #bbb; /* Light color for icon */
+            padding: 5px; /* Adjust as needed */
+            font-size: 24px; /* Slightly larger icon for better clickability without background */
+            line-height: 1; 
             cursor: pointer;
-            font-size: 14px;
+            transition: transform 0.1s ease, color 0.2s ease;
+            /* Remove box-shadow if any was implicitly inherited or applied */
+            box-shadow: none;
         }
         .toggle-controls button:hover {
-            background: #666;
+            color: #fff; /* Brighter on hover */
+            transform: scale(1.1); /* Slight zoom on hover */
         }
-
+        .toggle-controls button:active {
+            transform: scale(0.95); /* Slightly smaller on click */
+            color: #aaa; /* Dim slightly on click or keep #fff */
+        }
 
         .emote {
             display: inline-block;
@@ -305,16 +314,7 @@
             max-height: 28px;
         }
 
-        /* Scrolling direction indicator */
-        .scroll-direction {
-            background-color: #e0e0e0; /* Light gray background */
-            color: #555; /* Darker text */
-            padding: 6px 10px; /* Adjusted padding */
-            border-radius: 6px;
-            font-size: 13px; /* Adjusted font size */
-            margin-left: 5px; /* Adjust margin if needed */
-            font-weight: 500;
-        }
+        /* Scrolling direction indicator (CSS class removed as element is removed) */
     
 /* Pastel Style */
 .chat-message.pastel {
@@ -400,11 +400,93 @@
     color: #555555; /* Darker gray for light theme */
 }
 
+/* Nico Scroll Style CSS */
+#chatContainer.nico {
+    overflow: hidden; /* Prevent messages from showing outside the container */
+    /* position: relative; /* Not strictly needed as #chatContainer is position:fixed */
+}
+
+#chatContainer.nico .chat-message {
+    position: absolute;
+    /* 'left' will be set by JavaScript to start off-screen right */
+    /* 'top' will be set by JavaScript */
+    white-space: nowrap;
+    padding: 5px 10px;
+    text-shadow: 0 0 3px black, 0 0 3px black; /* Emphasize shadow for readability */
+    font-size: 22px; /* Slightly larger default */
+    animation-name: nico-scroll-animation; /* Renamed for clarity */
+    animation-timing-function: linear;
+    animation-duration: 8s; /* Default, can be varied by JS */
+}
+
+@keyframes nico-scroll-animation { /* Renamed */
+    from {
+        transform: translateX(0%); /* Starts at the 'left' position set by JS */
+    }
+    to {
+        /* Moves left by a large amount to ensure it crosses the screen.
+           -130vw means 130% of the viewport width to the left. */
+        transform: translateX(-130vw); 
+    }
+}
+
+/* Nico Speed Controls Styling */
+#nicoControls {
+    /* display: none; /* Initially hidden, shown by JS when Nico scroll is active - REMOVED, will inherit from .style-controls */
+    /* Similar styling to .style-controls for consistency, or a general class can be made */
+    background: rgba(230, 230, 230, 0.85); /* Match .style-controls background */
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 100%; /* Or appropriate width */
+    box-sizing: border-box;
+}
+#nicoControls label { /* Ensure label styling matches others */
+    color: #333;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+#nicoControls input[type="range"] { /* Ensure slider styling matches others */
+    /* Copy styles from .style-controls input[type="range"] or create a shared class */
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ddd;
+    height: 8px;
+    border-radius: 4px;
+    width: 120px; /* Or adjust */
+    margin: 0 10px;
+}
+#nicoControls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#nicoControls input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+#nicoControls span { /* Ensure span styling for value matches others */
+    min-width: 40px;
+    text-align: right;
+    color: #007aff;
+    font-weight: 500;
+}
 </style>
 </head>
 <body>
     <div class="toggle-controls">
-        <button onclick="toggleControls()">Toggle Controls</button>
+        <button onclick="toggleControls()" title="Toggle Controls">🎛️</button>
     </div>
 
     <div class="controls" id="controls">
@@ -441,8 +523,8 @@
         <select id="scrollDirection" onchange="changeScrollDirection()">
             <option value="vertical">Vertical Scroll</option>
             <option value="horizontal">Horizontal Scroll</option>
+            <option value="nico">Nico Scroll</option>
         </select>
-        <span class="scroll-direction" id="scrollIndicator">↕ Vertical</span>
         
         <span class="status" id="status">Disconnected</span>
         
@@ -451,16 +533,25 @@
         <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps">Show Timestamps</label></div> <!-- Removed inline style, will be handled by .controls label -->
         
         <div class="style-controls" id="generalStyleControls">
+            <label for="messageOpacity">Msg Opacity: <input type="range" id="messageOpacity" min="0" max="100" value="100" step="5" onchange="updateMessageOpacity()"> <span id="messageOpacityValue">100%</span></label>
             <label>Corner Radius: <input type="range" id="generalRadius" min="5" max="30" value="20" onchange="updateGeneralStyle()"><span id="generalRadiusValue">20px</span></label>
             <label>Max Width: <input type="range" id="generalMaxWidth" min="50" max="100" value="80" onchange="updateGeneralStyle()"><span id="generalMaxWidthValue">80%</span></label>
             <label>Vertical Padding: <input type="range" id="generalVPadding" min="5" max="25" value="12" onchange="updateGeneralStyle()"><span id="generalVPaddingValue">12px</span></label>
             <label>Horizontal Padding: <input type="range" id="generalHPadding" min="8" max="30" value="16" onchange="updateGeneralStyle()"><span id="generalHPaddingValue">16px</span></label>
             <label>Message Spacing: <input type="range" id="generalSpacing" min="2" max="15" value="8" onchange="updateGeneralStyle()"><span id="generalSpacingValue">8px</span></label>
         </div>
+
+        <div class="style-controls active" id="scaleControls">
+            <label for="chatScale">Chat Scale: <input type="range" id="chatScale" min="50" max="150" value="100" step="10" onchange="updateChatScale()"> <span id="chatScaleValue">100%</span></label>
+        </div>
         
         <div class="style-controls" id="vividControls">
             <label>Shadow Intensity: <input type="range" id="vividShadow" min="0" max="50" value="15" onchange="updateVividStyle()"><span id="vividShadowValue">15px</span></label>
             <label>Border Width: <input type="range" id="vividBorder" min="0" max="8" value="4" onchange="updateVividStyle()"><span id="vividBorderValue">4px</span></label>
+        </div>
+
+        <div class="style-controls" id="nicoControls"> <!-- This will inherit .style-controls styling -->
+            <label for="nicoSpeed">Nico Speed: <input type="range" id="nicoSpeed" min="3" max="15" value="8" step="1" onchange="updateNicoSpeed()"> <span id="nicoSpeedValue">8s</span></label>
         </div>
     </div>
 
@@ -489,6 +580,9 @@
             // Initialize display values for style-specific sliders
             updateGeneralStyle(); 
             updateVividStyle();
+            updateNicoSpeed(); // Initialize Nico speed display
+            updateChatScale(); // Initialize chat scale
+            updateMessageOpacity(); // Initialize message opacity
             // Set initial timestamp visibility based on the checkbox state (default: hidden)
             toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
             connectToChannel(); // Attempt to connect to the default channel
@@ -504,12 +598,63 @@
         }
 
         /**
+         * Updates the global opacity for all chat messages based on the slider.
+         */
+        function updateMessageOpacity() {
+            const opacitySlider = document.getElementById('messageOpacity');
+            const opacityValueDisplay = document.getElementById('messageOpacityValue');
+
+            if (opacitySlider && opacityValueDisplay) {
+                const opacityValue = parseInt(opacitySlider.value); // Value from 0-100
+                opacityValueDisplay.textContent = opacityValue + '%';
+
+                const newOpacity = opacityValue / 100; // Convert to 0.0 - 1.0
+                
+                // Apply this opacity to all chat messages globally
+                // Using !important to ensure it overrides any specific theme's opacity setting on the message div itself.
+                const styleContent = `.chat-message { opacity: ${newOpacity} !important; }`;
+                updateDynamicStyle('globalMessageOpacityStyle', styleContent);
+            }
+        }
+
+        /**
+         * Updates the chat container's scale based on the slider and updates the display value.
+         */
+        function updateChatScale() {
+            const scaleSlider = document.getElementById('chatScale');
+            const chatContainer = document.getElementById('chatContainer');
+            const scaleValueDisplay = document.getElementById('chatScaleValue');
+
+            if (scaleSlider && chatContainer && scaleValueDisplay) {
+                const scale = parseFloat(scaleSlider.value) / 100; // Convert percentage to decimal (e.g., 100 -> 1.0)
+                scaleValueDisplay.textContent = scaleSlider.value + '%';
+                chatContainer.style.transform = `scale(${scale})`;
+                chatContainer.style.transformOrigin = 'bottom left'; // Always use bottom left
+            }
+        }
+
+        /**
+         * Updates the display value for the Nico Scroll speed slider.
+         */
+        function updateNicoSpeed() {
+            const speedSlider = document.getElementById('nicoSpeed');
+            if (speedSlider) { 
+                const speedValueDisplay = document.getElementById('nicoSpeedValue');
+                const duration = speedSlider.value;
+                if (speedValueDisplay) {
+                    speedValueDisplay.textContent = duration + 's';
+                }
+            }
+        }
+
+        /**
          * Called when the scroll direction dropdown changes.
          * Updates the global scrollDirection variable and applies the change.
          */
         function changeScrollDirection() {
             scrollDirection = document.getElementById('scrollDirection').value;
             updateScrollDirection();
+            updateStyleControls(); // Add this line
         }
 
         /**
@@ -519,27 +664,32 @@
          */
         function updateScrollDirection() {
             const container = document.getElementById('chatContainer');
-            const indicator = document.getElementById('scrollIndicator');
             
+            // Remove all direction-specific classes first
+            container.classList.remove('horizontal', 'nico'); 
+            // Assuming default is vertical, so no explicit 'vertical' class needed unless specific styles depend on it.
+
             if (scrollDirection === 'horizontal') {
-                container.classList.add('horizontal'); // Add class for horizontal styling
-                indicator.textContent = '↔ Horizontal';
-                indicator.style.background = '#ff6b6b'; // Reddish indicator for horizontal
-            } else {
-                container.classList.remove('horizontal'); // Remove class, revert to vertical
-                indicator.textContent = '↕ Vertical';
-                indicator.style.background = '#9146ff'; // Purple indicator for vertical
+                container.classList.add('horizontal');
+            } else if (scrollDirection === 'nico') {
+                container.classList.add('nico');
             }
-            
-            // Use setTimeout to ensure DOM updates are processed before scrolling
-            setTimeout(scrollToLatest, 100);
+            // else it's vertical (default, no class needed or a 'vertical' class if you have one)
+
+            // For Nico mode, we might clear existing non-Nico messages or let them be.
+            // For now, changing mode will not automatically clear messages from other modes.
+            // scrollToLatest might not be relevant for Nico mode, but doesn't harm.
+            setTimeout(scrollToLatest, 100); 
         }
 
         /**
          * Scrolls the chat container to the latest message.
          * Adapts to both vertical and horizontal scroll directions.
+         * Does nothing if scrollDirection is 'nico'.
          */
         function scrollToLatest() {
+            if (scrollDirection === 'nico') return; // No scrolling in Nico mode
+
             const container = document.getElementById('chatContainer');
             if (scrollDirection === 'horizontal') {
                 container.scrollLeft = container.scrollWidth; // Scroll to the far right
@@ -693,46 +843,84 @@
          * @param {string} message - The chat message content.
          */
         function displayMessage(username, message) {
-            const container = document.getElementById('chatContainer');
+            const chatContainer = document.getElementById('chatContainer'); // Get reference to chat container
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${currentStyle}`; // Apply current style class
-            
-            // Create and style the username span
+            messageDiv.className = `chat-message ${currentStyle}`;
+
             const usernameSpan = document.createElement('span');
             usernameSpan.className = 'username';
-            usernameSpan.textContent = username + ':'; // Add colon after username
-            usernameSpan.style.color = generateUserColor(username); // Assign a unique color
-            
-            // Create and style the message text span
+            usernameSpan.textContent = username + ':';
+            usernameSpan.style.color = generateUserColor(username);
+
             const messageSpan = document.createElement('span');
             messageSpan.className = 'message-text';
-            messageSpan.textContent = ' ' + message; // Add leading space for separation from username
+            messageSpan.textContent = ' ' + message;
 
-            // Create and style the timestamp span
             const timestampSpan = document.createElement('span');
             timestampSpan.className = 'message-timestamp';
-            timestampSpan.textContent = `[${new Date().toLocaleTimeString()}]`; // Format: [HH:MM:SS AM/PM]
-            
-            // Set initial visibility of the timestamp based on the "Show Timestamps" checkbox
+            timestampSpan.textContent = `[${new Date().toLocaleTimeString()}]`;
             if (document.getElementById('showTimestamps').checked) {
                 timestampSpan.style.display = 'inline';
             } else {
                 timestampSpan.style.display = 'none';
             }
 
-            // Append elements to the message div in order: timestamp, username, message
-            messageDiv.appendChild(timestampSpan); 
+            messageDiv.appendChild(timestampSpan);
             messageDiv.appendChild(usernameSpan);
             messageDiv.appendChild(messageSpan);
-            
-            container.appendChild(messageDiv); // Add the new message to the chat container
-            
-            scrollToLatest(); // Scroll to the new message to ensure it's visible
-            
-            // Limit the number of messages displayed to prevent performance issues and excessive memory use.
-            // Keeps a maximum of 100 messages in the chat.
-            while (container.children.length > 100) { 
-                container.removeChild(container.firstChild); // Remove the oldest message (at the top)
+
+            if (scrollDirection === 'nico') {
+                // Nico mode: messages scroll across the screen
+                
+                // Set initial position
+                // A simple initial approach for 'top': percentage of container height.
+                // Subtracting a fixed amount (e.g., 20px or message height estimate) can prevent messages from being cut off at the bottom.
+                // For more precise positioning, one might need to append, measure, then set top.
+                const randomTopPercent = Math.floor(Math.random() * 85); // 0% to 85% to leave some space at bottom
+                messageDiv.style.top = randomTopPercent + '%'; 
+                
+                // Adjust starting position based on current chat container scale
+                const scaleSlider = document.getElementById('chatScale');
+                let currentScale = 1; // Default to 1 (no scale)
+                if (scaleSlider) {
+                    currentScale = (parseFloat(scaleSlider.value) || 100) / 100;
+                }
+                messageDiv.style.left = (chatContainer.offsetWidth / currentScale) + 'px'; // Start off-screen right, adjusted for scale
+
+                // Get duration from the Nico Speed slider
+                let nicoDuration = 8; // Default duration
+                const nicoSpeedSlider = document.getElementById('nicoSpeed');
+                if (nicoSpeedSlider) {
+                    let sliderValue = parseFloat(nicoSpeedSlider.value);
+                    // Validate against slider's min/max attributes if they exist, otherwise use reasonable defaults
+                    const minDuration = nicoSpeedSlider.hasAttribute('min') ? parseFloat(nicoSpeedSlider.min) : 1;
+                    const maxDuration = nicoSpeedSlider.hasAttribute('max') ? parseFloat(nicoSpeedSlider.max) : 30;
+
+                    if (!isNaN(sliderValue) && sliderValue >= minDuration && sliderValue <= maxDuration) {
+                        nicoDuration = sliderValue;
+                    }
+                }
+                messageDiv.style.animationDuration = nicoDuration + 's';
+                
+                chatContainer.appendChild(messageDiv);
+
+                // Listener for self-removal after animation ends
+                messageDiv.addEventListener('animationend', function() {
+                    if (this.parentNode) {
+                        this.parentNode.removeChild(this);
+                    }
+                }, { once: true });
+                // Message limit is implicitly handled by self-removal. No explicit count needed for Nico.
+
+            } else {
+                // Existing logic for vertical and horizontal scrolling
+                chatContainer.appendChild(messageDiv);
+                scrollToLatest(); // Scroll to the new message
+
+                // Limit messages to prevent memory issues for non-Nico modes
+                while (chatContainer.children.length > 100) {
+                    chatContainer.removeChild(chatContainer.firstChild);
+                }
             }
         }
 
@@ -790,10 +978,11 @@
         function updateStyleControls() {
             const generalControls = document.getElementById('generalStyleControls');
             const vividControls = document.getElementById('vividControls');
+            const nicoControls = document.getElementById('nicoControls');
             
             // Hide all style-specific controls first to ensure a clean state.
-            // generalControls.classList.remove('active'); // General is always active now
             vividControls.classList.remove('active');
+            nicoControls.classList.remove('active'); // Ensure Nico controls are hidden by default
             
             // Activate general controls for all styles (it should always be visible if any style is selected)
             generalControls.classList.add('active');
@@ -803,11 +992,14 @@
             if (currentStyle === 'vivid') {
                 vividControls.classList.add('active');
                 updateVividStyle(); // Ensure sliders and values reflect current vivid style state.
-            } else if (currentStyle === 'bubble') {
-                // Bubble specific controls were removed, but if we had a separate bubble panel, we'd activate it here.
-                // For now, bubble uses only general controls.
+            } 
+            // Note: 'bubble' and other styles only use general controls now.
+            
+            // Show Nico controls only if Nico scroll direction is active
+            if (scrollDirection === 'nico') {
+                nicoControls.classList.add('active');
+                updateNicoSpeed(); // Initialize/update speed display when shown
             }
-            // Other styles (e.g., 'light', 'pastel') might not have specific controls beyond general.
         }
 
         /**
