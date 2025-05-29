@@ -12,9 +12,9 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
-            background: #0e0e10;
-            color: #efeff1;
+            font-family: 'Arial', sans-serif; /* Will be overridden by .controls for the panel */
+            background: #0e0e10; /* Page background, chat messages are on this */
+            color: #efeff1; /* Default text color for page, chat messages use this */
             height: 100vh;
             overflow: hidden;
         }
@@ -23,47 +23,86 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background: rgba(245, 245, 247, 0.85); /* Light, translucent background */
+            color: #333; /* Dark text for controls */
+            padding: 20px;
+            border-radius: 12px; /* Softer corners */
             z-index: 1000;
             display: flex;
-            gap: 10px;
+            gap: 15px; /* Increased gap */
             align-items: center;
             flex-wrap: wrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Subtle shadow */
         }
 
+        /* General reset for form elements within .controls, more specific rules follow */
         .controls input, .controls select, .controls button {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            background: #2f2f2f;
-            color: #efeff1;
-            font-size: 14px;
+            font-size: 15px; /* Base font size for controls */
+            border-radius: 8px; /* Consistent corner rounding */
+            /* Removing old general background/color, will be set by specific rules */
         }
 
         .controls button {
-            background: #9146ff;
+            border: none;
+            padding: 10px 15px;
             cursor: pointer;
-            transition: background 0.2s;
+            background-color: #e0e0e0; /* Light gray for secondary/default buttons */
+            color: #333;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
         .controls button:hover {
-            background: #772ce8;
+            background-color: #d5d5d5;
+        }
+
+        .controls button:active {
+            transform: scale(0.98);
+            background-color: #cccccc;
+        }
+        
+        #connectBtn {
+            background-color: #007aff; /* iOS blue */
+            color: white;
+            font-weight: 500;
+        }
+
+        #connectBtn:hover {
+            background-color: #005ecb; /* Darker blue on hover */
         }
 
         .controls button:disabled {
-            background: #666;
+            background-color: #f0f0f0; /* Lighter gray for disabled */
+            color: #aaa; /* Muted text color */
             cursor: not-allowed;
+            transform: scale(1); /* Ensure no active transform state is stuck */
+        }
+        
+        .controls input[type="text"], 
+        .controls input[type="password"], 
+        .controls select {
+            border: 1px solid #ccc;
+            padding: 10px 12px;
+            background-color: #fff; /* White background for inputs */
+            color: #333;
+        }
+
+        .controls input[type="text"]:focus,
+        .controls input[type="password"]:focus,
+        .controls select:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.3);
+            outline: none;
         }
 
         .status {
-            color: #00ff88;
-            font-size: 12px;
+            color: #28a745; /* Green for connected */
+            font-size: 14px; /* Slightly larger for better visibility */
+            font-weight: 500;
         }
 
         .status.disconnected {
-            color: #ff6b6b;
+            color: #dc3545; /* Red for disconnected */
         }
 
         /* Vertical Scrolling (Default) */
@@ -174,55 +213,91 @@
 
         /* Style-specific adjustments */
         .style-controls {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(230, 230, 230, 0.85); /* Slightly darker than main controls panel */
             padding: 15px;
             border-radius: 8px;
-            margin-top: 10px;
-            display: none;
+            margin-top: 10px; /* Keep some spacing */
+            display: none; /* Hidden by default */
+            width: 100%; /* Make it take full width of the controls flex item it's in */
+            box-sizing: border-box;
         }
 
         .style-controls.active {
             display: block;
         }
 
-        .style-controls label {
+        /* Labels within .controls and .style-controls should be dark */
+        .controls label, .style-controls label {
+            color: #333; /* Ensure all labels are dark */
+            font-size: 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin: 8px 0;
-            font-size: 12px;
         }
-
+        
+        /* Styling for range inputs (sliders) */
         .style-controls input[type="range"] {
-            width: 120px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd; /* Track color */
+            height: 8px;
+            border-radius: 4px;
+            width: 120px; /* Keep original width or adjust as needed */
             margin: 0 10px;
         }
 
+        .style-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #007aff; /* iOS blue thumb */
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .style-controls input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007aff; /* iOS blue thumb */
+            border-radius: 50%;
+            cursor: pointer;
+            border: none; /* Important for Firefox */
+        }
+
+        /* Text value display next to sliders */
         .style-controls span {
             min-width: 40px;
             text-align: right;
-            color: #9146ff;
-            font-weight: bold;
+            color: #007aff; /* iOS blue for accent */
+            font-weight: 500;
         }
 
         .toggle-controls {
             position: fixed;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
+            /* Keep the dark, minimal toggle button for contrast against page background */
+            background: rgba(40, 40, 40, 0.85); 
+            padding: 8px; /* Slightly smaller padding */
             border-radius: 8px;
             z-index: 1000;
         }
 
         .toggle-controls button {
-            padding: 5px 10px;
+            padding: 8px 12px; /* Match other buttons a bit more */
             border: none;
-            border-radius: 4px;
-            background: #2f2f2f;
-            color: #efeff1;
+            border-radius: 6px; /* Slightly smaller radius */
+            background: #555; /* Dark gray */
+            color: #efeff1; /* Light text */
             cursor: pointer;
+            font-size: 14px;
         }
+        .toggle-controls button:hover {
+            background: #666;
+        }
+
 
         .emote {
             display: inline-block;
@@ -232,12 +307,13 @@
 
         /* Scrolling direction indicator */
         .scroll-direction {
-            background: #9146ff;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 10px;
+            background-color: #e0e0e0; /* Light gray background */
+            color: #555; /* Darker text */
+            padding: 6px 10px; /* Adjusted padding */
+            border-radius: 6px;
+            font-size: 13px; /* Adjusted font size */
+            margin-left: 5px; /* Adjust margin if needed */
+            font-weight: 500;
         }
     
 /* Pastel Style */
@@ -344,9 +420,9 @@
 
         <!-- User Help Text for OAuth Token -->
         <div style="width: 100%; margin-top: 5px; margin-bottom: 5px; order: 1;"> <!-- Wrapper div for better layout and order -->
-            <p style="font-size: 12px; color: #ccc;">
+            <p style="font-size: 12px; color: #555;"> <!-- Updated color for light panel -->
               <strong>How to get an OAuth Token:</strong> For Twitch chat, you need an OAuth token. You can generate one from sites like
-              <a href="https://twitchtokengenerator.com" target="_blank" style="color: #9146ff;">twitchtokengenerator.com</a>.
+              <a href="https://twitchtokengenerator.com" target="_blank" style="color: #007aff;">twitchtokengenerator.com</a>. <!-- Updated link color -->
               Recommended scope: <code>chat:read</code>. Ensure the token is prefixed with "oauth:".
             </p>
         </div>
@@ -355,7 +431,7 @@
         <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
         
         <select id="styleSelect" onchange="changeStyle()">
-            <option value="default">default</option>
+            <option value="bubble">Bubble</option>
 <option value="pastel">Pastel</option>
 <option value="twitch">Twitch</option>
 <option value="pnm">PNM</option>
@@ -373,7 +449,7 @@
         
         <button onclick="clearChat()">Clear Chat</button>
 
-        <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps" style="color: #efeff1; font-size: 14px;">Show Timestamps</label></div>
+        <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps">Show Timestamps</label></div> <!-- Removed inline style, will be handled by .controls label -->
         
         <div class="style-controls" id="bubbleControls">
             <label>Transparency: <input type="range" id="bubbleOpacity" min="10" max="80" value="20" onchange="updateBubbleStyle()"><span id="bubbleOpacityValue">20%</span></label>
@@ -415,6 +491,7 @@
          */
         window.addEventListener('load', () => {
             document.getElementById('channelInput').value = 'nstgaming_'; // Default channel
+            document.getElementById('styleSelect').value = currentStyle; // Set dropdown to currentStyle
             updateStyleControls(); // Show controls for the default style
             updateScrollDirection(); // Apply default scroll direction
             // Initialize display values for style-specific sliders
