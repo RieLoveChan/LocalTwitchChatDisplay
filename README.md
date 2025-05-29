@@ -29,6 +29,7 @@ A single HTML file application that allows you to view Twitch chat from any chan
     *   **Horizontal Scroll:** Messages flow horizontally.
     *   **Nico Scroll:** Messages fly across the screen from right to left, reminiscent of Nico Nico Douga.
 *   **Nico Scroll Speed Control:** When "Nico Scroll" is active, a slider appears to control the animation duration (speed) of the flying messages.
+*   **Chat Scale Control:** Adjust the overall size of the chat display area using a slider, scaling from 50% to 150% of its original size. This affects all content within the chat view.
 *   **Chat Management:**
     *   **Clear Chat:** Remove all current messages from the display.
     *   **Toggle Controls:** Show or hide the main controls panel using a 🎛️ icon button to maximize chat visibility.
