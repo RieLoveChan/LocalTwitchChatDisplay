@@ -17,13 +17,21 @@ A single HTML file application that allows you to view Twitch chat from any chan
     *   **Twitch:** A style that mimics the default Twitch chat appearance.
     *   **PNM (Party-Night-Mode):** A high-contrast, vibrant style.
 *   **Style Customization:**
-    *   **Bubble Style:** Adjust transparency, corner radius, max width, padding, message spacing, and background blur.
-    *   **Vivid Style:** Customize shadow intensity, border width, max width, padding, message spacing, and corner radius.
+    *   **General Controls:** Adjust common layout properties for *all* message styles using sliders for:
+        *   Max Message Width
+        *   Vertical & Horizontal Padding
+        *   Corner Radius
+        *   Message Spacing
+    *   **Vivid Style Specifics:** The "Vivid" style has additional unique controls for Shadow Intensity and Border Width.
 *   **Toggleable Timestamps:** Show or hide timestamps for each message.
-*   **Scroll Direction:** Switch between standard vertical scrolling or a horizontal scrolling layout for chat messages.
+*   **Scroll Direction:** Switch between different chat display modes:
+    *   **Vertical Scroll:** Standard top-to-bottom chat flow.
+    *   **Horizontal Scroll:** Messages flow horizontally.
+    *   **Nico Scroll:** Messages fly across the screen from right to left, reminiscent of Nico Nico Douga.
+*   **Nico Scroll Speed Control:** When "Nico Scroll" is active, a slider appears to control the animation duration (speed) of the flying messages.
 *   **Chat Management:**
     *   **Clear Chat:** Remove all current messages from the display.
-    *   **Toggle Controls:** Show or hide the main controls panel to maximize chat visibility.
+    *   **Toggle Controls:** Show or hide the main controls panel using a 🎛️ icon button to maximize chat visibility.
 *   **Dynamic Username Colors:** Usernames are automatically assigned distinct colors for better readability.
 *   **Auto-Connect (Optional):** The application can be easily modified to auto-connect to a default channel on load (currently defaults to 'nstgaming_').
 
