@@ -629,16 +629,7 @@
                 const scale = parseFloat(scaleSlider.value) / 100; // Convert percentage to decimal (e.g., 100 -> 1.0)
                 scaleValueDisplay.textContent = scaleSlider.value + '%';
                 chatContainer.style.transform = `scale(${scale})`;
-
-                // Set transform-origin based on scroll direction for better user experience
-                if (scrollDirection === 'horizontal' || scrollDirection === 'nico') {
-                    // For horizontal or nico, scaling from center might feel more natural
-                    // or top center if messages mainly flow through upper part.
-                    // Let's try center for these.
-                    chatContainer.style.transformOrigin = 'center center'; 
-                } else { // Vertical
-                    chatContainer.style.transformOrigin = 'bottom left'; // Scales from bottom-left for vertical chat
-                }
+                chatContainer.style.transformOrigin = 'bottom left'; // Always use bottom left
             }
         }
 
@@ -887,7 +878,14 @@
                 // For more precise positioning, one might need to append, measure, then set top.
                 const randomTopPercent = Math.floor(Math.random() * 85); // 0% to 85% to leave some space at bottom
                 messageDiv.style.top = randomTopPercent + '%'; 
-                messageDiv.style.left = chatContainer.offsetWidth + 'px'; // Start off-screen right
+                
+                // Adjust starting position based on current chat container scale
+                const scaleSlider = document.getElementById('chatScale');
+                let currentScale = 1; // Default to 1 (no scale)
+                if (scaleSlider) {
+                    currentScale = (parseFloat(scaleSlider.value) || 100) / 100;
+                }
+                messageDiv.style.left = (chatContainer.offsetWidth / currentScale) + 'px'; // Start off-screen right, adjusted for scale
 
                 // Get duration from the Nico Speed slider
                 let nicoDuration = 8; // Default duration
