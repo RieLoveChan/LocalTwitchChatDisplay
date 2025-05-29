@@ -290,6 +290,40 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Light Style */
+.chat-message.light {
+    background: #f0f0f0;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 4px 0;
+    max-width: 85%;
+    word-wrap: break-word;
+    color: #333333;
+    animation: fade-up 0.5s ease-out;
+}
+
+.chat-message.light .username {
+    color: #555555;
+    font-weight: bold;
+}
+
+#chatContainer.horizontal .chat-message.light {
+    animation: slideInHorizontal 0.3s ease-out; /* Or a specific horizontal animation if preferred */
+    margin: 0 4px;
+}
+
+.message-timestamp {
+    color: #999999; /* Default light gray for dark themes */
+    font-size: 0.8em;
+    margin-right: 6px;
+    display: none; /* Initially hidden, controlled by JS */
+}
+
+.chat-message.light .message-timestamp {
+    color: #555555; /* Darker gray for light theme */
+}
+
 </style>
 </head>
 <body>
@@ -304,6 +338,18 @@
             <option value="jano_manx">
             <option value="zfg1">
         </datalist>
+
+        <input type="password" id="oauthInput" placeholder="OAuth Token (oauth:xxxxxx)">
+        <input type="text" id="nickInput" placeholder="Nickname (optional)">
+
+        <!-- User Help Text for OAuth Token -->
+        <div style="width: 100%; margin-top: 5px; margin-bottom: 5px; order: 1;"> <!-- Wrapper div for better layout and order -->
+            <p style="font-size: 12px; color: #ccc;">
+              <strong>How to get an OAuth Token:</strong> For Twitch chat, you need an OAuth token. You can generate one from sites like
+              <a href="https://twitchtokengenerator.com" target="_blank" style="color: #9146ff;">twitchtokengenerator.com</a>.
+              Recommended scope: <code>chat:read</code>. Ensure the token is prefixed with "oauth:".
+            </p>
+        </div>
         
         <button id="connectBtn" onclick="connectToChannel()">Connect</button>
         <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
@@ -314,6 +360,7 @@
 <option value="twitch">Twitch</option>
 <option value="pnm">PNM</option>
             <option value="vivid">Vivid Colors</option>
+            <option value="light">Light</option>
         </select>
 
         <select id="scrollDirection" onchange="changeScrollDirection()">
@@ -325,6 +372,8 @@
         <span class="status" id="status">Disconnected</span>
         
         <button onclick="clearChat()">Clear Chat</button>
+
+        <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps" style="color: #efeff1; font-size: 14px;">Show Timestamps</label></div>
         
         <div class="style-controls" id="bubbleControls">
             <label>Transparency: <input type="range" id="bubbleOpacity" min="10" max="80" value="20" onchange="updateBubbleStyle()"><span id="bubbleOpacityValue">20%</span></label>
@@ -350,61 +399,91 @@
     <div id="chatContainer"></div>
 
     <script>
-        let ws = null;
-        let currentChannel = '';
-        let currentStyle = 'bubble';
-        let controlsVisible = true;
-        let scrollDirection = 'vertical';
+        // --- Global Variables ---
+        let ws = null; // WebSocket connection object. Null when disconnected.
+        let currentChannel = ''; // Stores the name of the Twitch channel currently connected to.
+        let currentStyle = 'bubble'; // Holds the active chat message style (e.g., 'bubble', 'vivid'). Default is 'bubble'.
+        let controlsVisible = true; // Boolean to track if the main control panel is visible.
+        let scrollDirection = 'vertical'; // Determines chat scrolling direction ('vertical' or 'horizontal').
 
-        // Auto-connect to nstgaming_ on load
+        /**
+         * Initializes the application after the DOM is fully loaded.
+         * - Sets a default channel.
+         * - Updates UI elements based on current settings (styles, scroll direction, timestamps).
+         * - Initializes style control values.
+         * - Automatically connects to the default channel.
+         */
         window.addEventListener('load', () => {
-            document.getElementById('channelInput').value = 'nstgaming_';
-            updateStyleControls();
-            updateScrollDirection();
-            // Initialize display values for both styles
-            updateBubbleStyle();
+            document.getElementById('channelInput').value = 'nstgaming_'; // Default channel
+            updateStyleControls(); // Show controls for the default style
+            updateScrollDirection(); // Apply default scroll direction
+            // Initialize display values for style-specific sliders
+            updateBubbleStyle(); 
             updateVividStyle();
-            connectToChannel();
+            // Set initial timestamp visibility based on the checkbox state (default: hidden)
+            toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
+            connectToChannel(); // Attempt to connect to the default channel
         });
 
+        /**
+         * Toggles the visibility of the main controls panel.
+         */
         function toggleControls() {
             const controls = document.getElementById('controls');
-            controlsVisible = !controlsVisible;
-            controls.style.display = controlsVisible ? 'flex' : 'none';
+            controlsVisible = !controlsVisible; // Flip the visibility state
+            controls.style.display = controlsVisible ? 'flex' : 'none'; // Apply display style
         }
 
+        /**
+         * Called when the scroll direction dropdown changes.
+         * Updates the global scrollDirection variable and applies the change.
+         */
         function changeScrollDirection() {
             scrollDirection = document.getElementById('scrollDirection').value;
             updateScrollDirection();
         }
 
+        /**
+         * Applies the selected scroll direction to the chat container.
+         * Updates the visual indicator for the scroll direction.
+         * Re-scrolls to the latest message after changing direction.
+         */
         function updateScrollDirection() {
             const container = document.getElementById('chatContainer');
             const indicator = document.getElementById('scrollIndicator');
             
             if (scrollDirection === 'horizontal') {
-                container.classList.add('horizontal');
+                container.classList.add('horizontal'); // Add class for horizontal styling
                 indicator.textContent = '↔ Horizontal';
-                indicator.style.background = '#ff6b6b';
+                indicator.style.background = '#ff6b6b'; // Reddish indicator for horizontal
             } else {
-                container.classList.remove('horizontal');
+                container.classList.remove('horizontal'); // Remove class, revert to vertical
                 indicator.textContent = '↕ Vertical';
-                indicator.style.background = '#9146ff';
+                indicator.style.background = '#9146ff'; // Purple indicator for vertical
             }
             
-            // Re-scroll to the appropriate position
+            // Use setTimeout to ensure DOM updates are processed before scrolling
             setTimeout(scrollToLatest, 100);
         }
 
+        /**
+         * Scrolls the chat container to the latest message.
+         * Adapts to both vertical and horizontal scroll directions.
+         */
         function scrollToLatest() {
             const container = document.getElementById('chatContainer');
             if (scrollDirection === 'horizontal') {
-                container.scrollLeft = container.scrollWidth;
+                container.scrollLeft = container.scrollWidth; // Scroll to the far right
             } else {
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop = container.scrollHeight; // Scroll to the bottom
             }
         }
 
+        /**
+         * Connects to the specified Twitch channel via WebSocket.
+         * Handles OAuth token and nickname input, providing defaults if necessary.
+         * Sets up WebSocket event listeners (onopen, onmessage, onclose, onerror).
+         */
         function connectToChannel() {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
             if (!channel) {
@@ -412,141 +491,259 @@
                 return;
             }
 
+            // Close existing connection if any
             if (ws) {
                 ws.close();
             }
 
-            currentChannel = channel;
+            currentChannel = channel; // Store the current channel name
             
-            // Connect to Twitch IRC
+            // Establish WebSocket connection to Twitch IRC
             ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
             
+            /**
+             * Called when the WebSocket connection is successfully opened.
+             * Handles authentication with Twitch IRC using OAuth token and nickname.
+             */
             ws.onopen = () => {
-                // Send authentication (anonymous)
-                ws.send('PASS SCHMOOPIIE');
-                ws.send('NICK justinfan12345');
-                ws.send(`JOIN #${channel}`);
-                updateStatus('Connected', true);
-                document.getElementById('connectBtn').disabled = true;
-                document.getElementById('disconnectBtn').disabled = false;
+                // Handle OAuth token
+                let oauthToken = document.getElementById('oauthInput').value.trim();
+                if (oauthToken === '') {
+                    oauthToken = 'SCHMOOPIIE'; // Default anonymous token if none provided
+                } else if (!oauthToken.toLowerCase().startsWith('oauth:')) {
+                    oauthToken = 'oauth:' + oauthToken; // Ensure 'oauth:' prefix for the token
+                }
+
+                // Handle nickname
+                let nickname = document.getElementById('nickInput').value.trim();
+                if (nickname === '') {
+                    // Generate a random justinfan nickname if none provided
+                    nickname = `justinfan${Math.floor(Math.random() * 100000)}`;
+                }
+
+                // Send authentication messages to Twitch IRC
+                ws.send(`PASS ${oauthToken}`); // Send OAuth token as password
+                ws.send(`NICK ${nickname}`);    // Send nickname
+                ws.send(`JOIN #${channel}`);   // Join the specified channel
+
+                updateStatus('Connected', true); // Update UI status to 'Connected'
+                document.getElementById('connectBtn').disabled = true; // Disable connect button
+                document.getElementById('disconnectBtn').disabled = false; // Enable disconnect button
             };
 
+            /**
+             * Called when a message is received from the WebSocket server.
+             * @param {MessageEvent} event - The event object containing the message data.
+             */
             ws.onmessage = (event) => {
-                handleMessage(event.data);
+                handleMessage(event.data); // Process incoming messages
             };
 
+            /**
+             * Called when the WebSocket connection is closed.
+             * Updates UI elements to reflect the disconnected state.
+             */
             ws.onclose = () => {
-                updateStatus('Disconnected', false);
-                document.getElementById('connectBtn').disabled = false;
-                document.getElementById('disconnectBtn').disabled = true;
+                updateStatus('Disconnected', false); // Update UI status
+                document.getElementById('connectBtn').disabled = false; // Enable connect button
+                document.getElementById('disconnectBtn').disabled = true; // Disable disconnect button
+                ws = null; // Clear WebSocket object to allow for new connections
             };
 
+            /**
+             * Called when a WebSocket error occurs.
+             * Logs the error and updates the UI status.
+             * @param {Event} error - The error event.
+             */
             ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                updateStatus('Connection Error', false);
+                updateStatus('Connection Error', false); // Update UI status for error
             };
         }
 
+        /**
+         * Closes the WebSocket connection if it's open and sets ws to null.
+         */
         function disconnect() {
             if (ws) {
                 ws.close();
-                ws = null;
+                // ws is set to null in the ws.onclose event handler.
             }
         }
 
+        /**
+         * Handles raw messages received from the WebSocket.
+         * Responds to PING messages to keep the connection alive.
+         * Parses PRIVMSG lines to extract username and message content.
+         * @param {string} data - The raw message string from the server.
+         */
         function handleMessage(data) {
-            const lines = data.split('\r\n');
+            const lines = data.split('\r\n'); // Twitch messages are newline separated
             
             lines.forEach(line => {
+                // Twitch IRC server sends PING messages periodically.
+                // Must respond with PONG to maintain the connection.
                 if (line.startsWith('PING')) {
-                    ws.send('PONG :tmi.twitch.tv');
+                    ws.send('PONG :tmi.twitch.tv'); 
                     return;
                 }
 
-                // Parse chat messages
+                // Regex to parse standard Twitch chat messages (PRIVMSG).
+                // Example PRIVMSG: :username!username@username.tmi.twitch.tv PRIVMSG #channel :Actual message text
+                // This regex captures:
+                //   Group 1: username (e.g., "someuser")
+                //   Group 2: message text (e.g., "Hello world!")
                 if (line.includes('PRIVMSG')) {
                     const match = line.match(/:(.+)!.+@.+\.tmi\.twitch\.tv PRIVMSG #.+ :(.+)/);
                     if (match) {
-                        const [, username, message] = match;
-                        displayMessage(username, message);
+                        const [, username, message] = match; // Destructure the captured groups
+                        displayMessage(username, message);   // Display the parsed message
                     }
                 }
             });
         }
 
+        /**
+         * Creates and displays a new chat message in the chat container.
+         * Includes username, message text, and an optional timestamp.
+         * Applies the current chat style and user-specific color to the username.
+         * @param {string} username - The sender's username.
+         * @param {string} message - The chat message content.
+         */
         function displayMessage(username, message) {
             const container = document.getElementById('chatContainer');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${currentStyle}`;
+            messageDiv.className = `chat-message ${currentStyle}`; // Apply current style class
             
-            // Create username span with random color
+            // Create and style the username span
             const usernameSpan = document.createElement('span');
             usernameSpan.className = 'username';
-            usernameSpan.textContent = username + ':';
-            usernameSpan.style.color = generateUserColor(username);
+            usernameSpan.textContent = username + ':'; // Add colon after username
+            usernameSpan.style.color = generateUserColor(username); // Assign a unique color
             
-            // Create message text span
+            // Create and style the message text span
             const messageSpan = document.createElement('span');
             messageSpan.className = 'message-text';
-            messageSpan.textContent = ' ' + message;
+            messageSpan.textContent = ' ' + message; // Add leading space for separation from username
+
+            // Create and style the timestamp span
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'message-timestamp';
+            timestampSpan.textContent = `[${new Date().toLocaleTimeString()}]`; // Format: [HH:MM:SS AM/PM]
             
+            // Set initial visibility of the timestamp based on the "Show Timestamps" checkbox
+            if (document.getElementById('showTimestamps').checked) {
+                timestampSpan.style.display = 'inline';
+            } else {
+                timestampSpan.style.display = 'none';
+            }
+
+            // Append elements to the message div in order: timestamp, username, message
+            messageDiv.appendChild(timestampSpan); 
             messageDiv.appendChild(usernameSpan);
             messageDiv.appendChild(messageSpan);
             
-            container.appendChild(messageDiv);
+            container.appendChild(messageDiv); // Add the new message to the chat container
             
-            // Auto-scroll to latest message
-            scrollToLatest();
+            scrollToLatest(); // Scroll to the new message to ensure it's visible
             
-            // Limit messages to prevent memory issues
-            while (container.children.length > 100) {
-                container.removeChild(container.firstChild);
+            // Limit the number of messages displayed to prevent performance issues and excessive memory use.
+            // Keeps a maximum of 100 messages in the chat.
+            while (container.children.length > 100) { 
+                container.removeChild(container.firstChild); // Remove the oldest message (at the top)
             }
         }
 
+        /**
+         * Generates a pseudo-random color for a given username.
+         * Uses a simple hashing algorithm to pick a color from a predefined list.
+         * This ensures consistent coloring for the same username.
+         * @param {string} username - The username to generate a color for.
+         * @returns {string} A hex color code (e.g., '#ff6b6b').
+         */
         function generateUserColor(username) {
-            const colors = [
+            const colors = [ // Predefined list of visually distinct and pleasant colors
                 '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7',
                 '#dda0dd', '#98d8c8', '#ff7675', '#74b9ff', '#55a3ff',
                 '#fd79a8', '#fdcb6e', '#6c5ce7', '#a29bfe', '#fd79a8'
             ];
             
             let hash = 0;
+            // Simple hash function: iterate through username characters,
+            // combine char codes using bitwise operations for better distribution.
             for (let i = 0; i < username.length; i++) {
                 hash = username.charCodeAt(i) + ((hash << 5) - hash);
             }
             
-            return colors[Math.abs(hash) % colors.length];
+            // Use modulo operator to select a color from the array based on the hash.
+            // Math.abs ensures the index is non-negative.
+            return colors[Math.abs(hash) % colors.length]; 
         }
 
+        /**
+         * Called when the style select dropdown changes.
+         * Updates the global currentStyle variable.
+         * Applies the new style to all existing messages.
+         * Shows/hides style-specific control panels.
+         */
         function changeStyle() {
             currentStyle = document.getElementById('styleSelect').value;
-            updateStyleControls();
+            updateStyleControls(); // Show relevant controls for the new style
             
-            // Update existing messages
+            // Update the class of all existing messages to reflect the new style.
+            // This will trigger CSS changes associated with the new style class.
             const messages = document.querySelectorAll('.chat-message');
             messages.forEach(msg => {
-                msg.className = `chat-message ${currentStyle}`;
+                // Note: This replaces all classes except 'chat-message' with the new style.
+                // If animation or other utility classes were added directly, they might be removed.
+                // For this application, animations are tied to the style class itself.
+                msg.className = `chat-message ${currentStyle}`; 
             });
         }
 
+        /**
+         * Shows or hides the style-specific control panels (e.g., for 'bubble' or 'vivid' styles).
+         * Only one style control panel should be active and visible at a time.
+         */
         function updateStyleControls() {
             const bubbleControls = document.getElementById('bubbleControls');
             const vividControls = document.getElementById('vividControls');
             
+            // Hide all style-specific controls first to ensure a clean state.
             bubbleControls.classList.remove('active');
             vividControls.classList.remove('active');
             
+            // Show controls for the currently selected style.
             if (currentStyle === 'bubble') {
                 bubbleControls.classList.add('active');
-                updateBubbleStyle();
+                updateBubbleStyle(); // Ensure sliders and values reflect current bubble style state.
             } else if (currentStyle === 'vivid') {
                 vividControls.classList.add('active');
-                updateVividStyle();
+                updateVividStyle(); // Ensure sliders and values reflect current vivid style state.
             }
+            // Other styles (e.g., 'light', 'pastel') might not have specific controls, so no panel is shown.
         }
 
+        /**
+         * Toggles the visibility of all timestamps in the chat based on checkbox state.
+         * Iterates through all messages and sets the display style of their timestamp elements.
+         * @param {boolean} isChecked - True if timestamps should be shown, false if hidden.
+         */
+        function toggleAllTimestamps(isChecked) {
+            const allTimestamps = document.querySelectorAll('.chat-message .message-timestamp');
+            allTimestamps.forEach(ts => {
+                // Set display to 'inline' to show, 'none' to hide.
+                ts.style.display = isChecked ? 'inline' : 'none'; 
+            });
+        }
+        
+        /**
+         * Updates the CSS for the 'bubble' chat message style based on slider values.
+         * Gets values from corresponding sliders, updates their display values,
+         * then generates a CSS string and applies it dynamically to the page.
+         */
         function updateBubbleStyle() {
+            // Get values from sliders
             const opacity = document.getElementById('bubbleOpacity').value;
             const radius = document.getElementById('bubbleRadius').value;
             const width = document.getElementById('bubbleWidth').value;
@@ -555,7 +752,7 @@
             const spacing = document.getElementById('bubbleSpacing').value;
             const blur = document.getElementById('bubbleBlur').value;
             
-            // Update display values
+            // Update display values next to sliders for immediate user feedback
             document.getElementById('bubbleOpacityValue').textContent = opacity + '%';
             document.getElementById('bubbleRadiusValue').textContent = radius + 'px';
             document.getElementById('bubbleWidthValue').textContent = width + '%';
@@ -564,6 +761,8 @@
             document.getElementById('bubbleSpacingValue').textContent = spacing + 'px';
             document.getElementById('bubbleBlurValue').textContent = blur + 'px';
             
+            // Construct CSS rules string. Using '!important' to ensure these dynamic styles
+            // override any base styles defined in the main <style> tag.
             const style = `
                 .chat-message.bubble {
                     background: rgba(255, 255, 255, ${opacity / 100}) !important;
@@ -572,18 +771,24 @@
                     max-width: ${width}% !important;
                     padding: ${vPadding}px ${hPadding}px !important;
                 }
+                /* Apply margin for spacing differently for vertical vs horizontal layouts */
                 #chatContainer:not(.horizontal) .chat-message.bubble {
-                    margin: ${spacing / 2}px 0 !important;
+                    margin: ${spacing / 2}px 0 !important; /* Vertical spacing (top/bottom) */
                 }
                 #chatContainer.horizontal .chat-message.bubble {
-                    margin: 0 ${spacing / 2}px !important;
+                    margin: 0 ${spacing / 2}px !important; /* Horizontal spacing (left/right) */
                 }
             `;
             
-            updateDynamicStyle('bubbleStyle', style);
+            updateDynamicStyle('bubbleStyle', style); // Apply the generated CSS to a <style> tag
         }
 
+        /**
+         * Updates the CSS for the 'vivid' chat message style based on slider values.
+         * Similar to updateBubbleStyle, but for the 'vivid' style's specific controls.
+         */
         function updateVividStyle() {
+            // Get values from sliders
             const shadow = document.getElementById('vividShadow').value;
             const border = document.getElementById('vividBorder').value;
             const width = document.getElementById('vividWidth').value;
@@ -592,7 +797,7 @@
             const spacing = document.getElementById('vividSpacing').value;
             const radius = document.getElementById('vividRadius').value;
             
-            // Update display values
+            // Update display values next to sliders
             document.getElementById('vividShadowValue').textContent = shadow + 'px';
             document.getElementById('vividBorderValue').textContent = border + 'px';
             document.getElementById('vividWidthValue').textContent = width + '%';
@@ -601,6 +806,7 @@
             document.getElementById('vividSpacingValue').textContent = spacing + 'px';
             document.getElementById('vividRadiusValue').textContent = radius + 'px';
             
+            // Construct CSS rules string for the 'vivid' style
             const style = `
                 .chat-message.vivid {
                     box-shadow: 0 4px ${shadow}px rgba(102, 126, 234, 0.3) !important;
@@ -609,35 +815,53 @@
                     max-width: ${width}% !important;
                     padding: ${vPadding}px ${hPadding}px !important;
                 }
+                 /* Apply margin for spacing differently for vertical vs horizontal layouts */
                 #chatContainer:not(.horizontal) .chat-message.vivid {
-                    margin: ${spacing / 2}px 0 !important;
+                    margin: ${spacing / 2}px 0 !important; /* Vertical spacing */
                 }
                 #chatContainer.horizontal .chat-message.vivid {
-                    margin: 0 ${spacing / 2}px !important;
+                    margin: 0 ${spacing / 2}px !important; /* Horizontal spacing */
                 }
             `;
             
-            updateDynamicStyle('vividStyle', style);
+            updateDynamicStyle('vividStyle', style); // Apply the generated CSS
         }
 
+        /**
+         * Adds or updates a <style> element in the document's <head> with the provided CSS.
+         * This allows for dynamic styling based on user controls, overriding static styles.
+         * @param {string} id - The ID for the <style> element (e.g., 'bubbleStyle', 'vividStyle').
+         *                     This allows updating the correct style block if it already exists.
+         * @param {string} css - The CSS rules string to apply.
+         */
         function updateDynamicStyle(id, css) {
             let styleEl = document.getElementById(id);
-            if (!styleEl) {
+            if (!styleEl) { // If style element with this ID doesn't exist, create it
                 styleEl = document.createElement('style');
-                styleEl.id = id;
-                document.head.appendChild(styleEl);
+                styleEl.id = id; // Assign ID for future updates
+                document.head.appendChild(styleEl); // Add to document head
             }
-            styleEl.textContent = css;
+            styleEl.textContent = css; // Set the CSS content of the style element
         }
 
+        /**
+         * Updates the connection status display text and style.
+         * @param {string} status - The status message (e.g., "Connected", "Disconnected", "Connection Error").
+         * @param {boolean} connected - True if successfully connected, false otherwise.
+         */
         function updateStatus(status, connected) {
             const statusEl = document.getElementById('status');
+            // Display channel name if connected, otherwise just the status.
             statusEl.textContent = status + (connected ? ` to #${currentChannel}` : '');
+            // Apply different CSS classes for connected/disconnected states for visual feedback (color).
             statusEl.className = connected ? 'status' : 'status disconnected';
         }
 
+        /**
+         * Clears all messages from the chat container by setting its innerHTML to empty.
+         */
         function clearChat() {
-            document.getElementById('chatContainer').innerHTML = '';
+            document.getElementById('chatContainer').innerHTML = ''; // Remove all child elements
         }
     </script>
 </body>
