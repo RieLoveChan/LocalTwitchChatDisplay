@@ -1,147 +1,644 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Twitch Chat Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Chat Display</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+            font-family: 'Arial', sans-serif;
+            background: #0e0e10;
+            color: #efeff1;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-
-        .usage-note {
-            text-align: center;
-            font-size: 0.9em;
-            font-style: italic;
-            color: #555;
-            margin-bottom: 15px;
-        }
-
-        .controls-container {
-            margin-bottom: 20px;
+        .controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
             padding: 15px;
-            background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .controls-container label {
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 5px;
-        }
-
-        .controls-container input[type="text"],
-        .controls-container input[type="checkbox"] {
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        
-        .controls-container input[type="checkbox"] {
-            margin-right: 5px;
-            vertical-align: middle;
-        }
-
-        .controls-container button {
-            padding: 10px 15px;
-            background-color: #6441a5; /* Twitch purple */
-            color: white;
+        .controls input, .controls select, .controls button {
+            padding: 5px 10px;
             border: none;
             border-radius: 4px;
+            background: #2f2f2f;
+            color: #efeff1;
+            font-size: 14px;
+        }
+
+        .controls button {
+            background: #9146ff;
             cursor: pointer;
-            font-size: 16px;
+            transition: background 0.2s;
         }
 
-        .controls-container button:hover {
-            background-color: #503480;
+        .controls button:hover {
+            background: #772ce8;
         }
 
+        .controls button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .status {
+            color: #00ff88;
+            font-size: 12px;
+        }
+
+        .status.disconnected {
+            color: #ff6b6b;
+        }
+
+        /* Vertical Scrolling (Default) */
         #chatContainer {
-            border: 1px solid #ccc;
-            height: 60vh; /* Using vh for responsiveness */
-            width: 100%;
-            max-width: 800px; /* Max width for larger screens */
-            margin: auto; /* Center the chat container */
-            background-color: #fff; /* Background for the container itself */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-    </style>
+
+        /* Horizontal Scrolling */
+        #chatContainer.horizontal {
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            height: auto;
+            max-height: 200px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        #chatContainer.horizontal .chat-message {
+            flex-shrink: 0;
+            min-width: 200px;
+            max-width: 400px;
+            white-space: normal;
+        }
+
+        /* Transparent Bubble Style */
+        .chat-message.bubble {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 4px 0;
+            max-width: 80%;
+            word-wrap: break-word;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Horizontal animation for horizontal scrolling */
+        #chatContainer.horizontal .chat-message.bubble {
+            animation: slideInHorizontal 0.3s ease-out;
+            margin: 0 4px;
+        }
+
+        /* Vivid Color Style */
+        .chat-message.vivid {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 4px 0;
+            max-width: 85%;
+            word-wrap: break-word;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border-left: 4px solid #9146ff;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        #chatContainer.horizontal .chat-message.vivid {
+            animation: slideInHorizontal 0.3s ease-out;
+            margin: 0 4px;
+        }
+
+        .username {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .message-text {
+            display: inline;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInHorizontal {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Style-specific adjustments */
+        .style-controls {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .style-controls.active {
+            display: block;
+        }
+
+        .style-controls label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .style-controls input[type="range"] {
+            width: 120px;
+            margin: 0 10px;
+        }
+
+        .style-controls span {
+            min-width: 40px;
+            text-align: right;
+            color: #9146ff;
+            font-weight: bold;
+        }
+
+        .toggle-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .toggle-controls button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #2f2f2f;
+            color: #efeff1;
+            cursor: pointer;
+        }
+
+        .emote {
+            display: inline-block;
+            vertical-align: middle;
+            max-height: 28px;
+        }
+
+        /* Scrolling direction indicator */
+        .scroll-direction {
+            background: #9146ff;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    
+/* Pastel Style */
+.chat-message.pastel {
+    background: #ffe4f0;
+    border: 2px solid #ffd6ec;
+    border-radius: 20px;
+    color: #8a4f7d;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    padding: 14px 18px;
+    animation: fade-left 1s ease-out;
+}
+
+/* Twitch Style */
+.chat-message.twitch {
+    background: #18181b;
+    border-left: 4px solid #9146ff;
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    animation: fade-right 1s ease-out;
+}
+
+/* PNM Style */
+.chat-message.pnm {
+    background: yellow;
+    border: 3px solid blue;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: black;
+    animation: fade-down 1s ease-out;
+}
+
+/* Fade Animations */
+@keyframes fade-left {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-right {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-down {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+</style>
 </head>
 <body>
-    <!--
-        Twitch Chat Viewer - Usage Instructions
+    <div class="toggle-controls">
+        <button onclick="toggleControls()">Toggle Controls</button>
+    </div>
 
-        Description:
-        This HTML file displays Twitch chat for a specified channel using an iframe.
+    <div class="controls" id="controls">
+        <input type="text" id="channelInput" placeholder="Channel name" list="channelSuggestions">
+        <datalist id="channelSuggestions">
+            <option value="nstgaming_">
+            <option value="jano_manx">
+            <option value="zfg1">
+        </datalist>
+        
+        <button id="connectBtn" onclick="connectToChannel()">Connect</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        
+        <select id="styleSelect" onchange="changeStyle()">
+            <option value="default">default</option>
+<option value="pastel">Pastel</option>
+<option value="twitch">Twitch</option>
+<option value="pnm">PNM</option>
+            <option value="vivid">Vivid Colors</option>
+        </select>
 
-        Critical Instructions for Running:
-        - IMPORTANT: This file needs to be served by a local web server to function correctly
-          due to Twitch's embedding policies (parent domain restriction).
-        - To run a simple local server if you have Python 3:
-          python3 -m http.server
-        - If you have Python 2:
-          python -m SimpleHTTPServer
-        - Alternatively, you can use extensions like 'Live Server' in VS Code.
-        - Once the server is running, open your browser and navigate to http://localhost:<port>
-          (e.g., http://localhost:8000 if you used the python server command).
-
-        How to Use:
-        1. Enter the Twitch channel name in the "Twitch Channel" input field.
-        2. Check the "Dark Mode" box if you prefer the dark theme for the chat.
-        3. Click the "Load Chat" button. The chat will appear below the controls.
-    -->
-    <h1>Twitch Chat Viewer</h1>
-
-    <p class="usage-note">Note: This page must be served by a local web server (e.g., using Python's <code>http.server</code> or VS Code's Live Server) for the Twitch chat to load.</p>
-
-    <div class="controls-container">
-        <label for="channelNameInput">Twitch Channel:</label>
-        <input type="text" id="channelNameInput" placeholder="Enter Twitch Channel Name">
-        <br>
-        <input type="checkbox" id="darkModeCheckbox">
-        <label for="darkModeCheckbox">Dark Mode</label>
-        <br>
-        <button id="loadChatButton">Load Chat</button>
+        <select id="scrollDirection" onchange="changeScrollDirection()">
+            <option value="vertical">Vertical Scroll</option>
+            <option value="horizontal">Horizontal Scroll</option>
+        </select>
+        <span class="scroll-direction" id="scrollIndicator">↕ Vertical</span>
+        
+        <span class="status" id="status">Disconnected</span>
+        
+        <button onclick="clearChat()">Clear Chat</button>
+        
+        <div class="style-controls" id="bubbleControls">
+            <label>Transparency: <input type="range" id="bubbleOpacity" min="10" max="80" value="20" onchange="updateBubbleStyle()"><span id="bubbleOpacityValue">20%</span></label>
+            <label>Corner Radius: <input type="range" id="bubbleRadius" min="5" max="30" value="20" onchange="updateBubbleStyle()"><span id="bubbleRadiusValue">20px</span></label>
+            <label>Max Width: <input type="range" id="bubbleWidth" min="50" max="100" value="80" onchange="updateBubbleStyle()"><span id="bubbleWidthValue">80%</span></label>
+            <label>Vertical Padding: <input type="range" id="bubbleVPadding" min="5" max="25" value="12" onchange="updateBubbleStyle()"><span id="bubbleVPaddingValue">12px</span></label>
+            <label>Horizontal Padding: <input type="range" id="bubbleHPadding" min="8" max="30" value="16" onchange="updateBubbleStyle()"><span id="bubbleHPaddingValue">16px</span></label>
+            <label>Message Spacing: <input type="range" id="bubbleSpacing" min="2" max="15" value="8" onchange="updateBubbleStyle()"><span id="bubbleSpacingValue">8px</span></label>
+            <label>Blur Effect: <input type="range" id="bubbleBlur" min="0" max="20" value="10" onchange="updateBubbleStyle()"><span id="bubbleBlurValue">10px</span></label>
+        </div>
+        
+        <div class="style-controls" id="vividControls">
+            <label>Shadow Intensity: <input type="range" id="vividShadow" min="0" max="50" value="15" onchange="updateVividStyle()"><span id="vividShadowValue">15px</span></label>
+            <label>Border Width: <input type="range" id="vividBorder" min="0" max="8" value="4" onchange="updateVividStyle()"><span id="vividBorderValue">4px</span></label>
+            <label>Max Width: <input type="range" id="vividWidth" min="50" max="100" value="85" onchange="updateVividStyle()"><span id="vividWidthValue">85%</span></label>
+            <label>Vertical Padding: <input type="range" id="vividVPadding" min="5" max="25" value="10" onchange="updateVividStyle()"><span id="vividVPaddingValue">10px</span></label>
+            <label>Horizontal Padding: <input type="range" id="vividHPadding" min="8" max="30" value="14" onchange="updateVividStyle()"><span id="vividHPaddingValue">14px</span></label>
+            <label>Message Spacing: <input type="range" id="vividSpacing" min="2" max="15" value="8" onchange="updateVividStyle()"><span id="vividSpacingValue">8px</span></label>
+            <label>Corner Radius: <input type="range" id="vividRadius" min="0" max="20" value="8" onchange="updateVividStyle()"><span id="vividRadiusValue">8px</span></label>
+        </div>
     </div>
 
     <div id="chatContainer"></div>
 
     <script>
-        function loadTwitchChat() {
-            const channelName = document.getElementById('channelNameInput').value;
-            if (!channelName) {
-                alert('Please enter a Twitch channel name.');
+        let ws = null;
+        let currentChannel = '';
+        let currentStyle = 'bubble';
+        let controlsVisible = true;
+        let scrollDirection = 'vertical';
+
+        // Auto-connect to nstgaming_ on load
+        window.addEventListener('load', () => {
+            document.getElementById('channelInput').value = 'nstgaming_';
+            updateStyleControls();
+            updateScrollDirection();
+            // Initialize display values for both styles
+            updateBubbleStyle();
+            updateVividStyle();
+            connectToChannel();
+        });
+
+        function toggleControls() {
+            const controls = document.getElementById('controls');
+            controlsVisible = !controlsVisible;
+            controls.style.display = controlsVisible ? 'flex' : 'none';
+        }
+
+        function changeScrollDirection() {
+            scrollDirection = document.getElementById('scrollDirection').value;
+            updateScrollDirection();
+        }
+
+        function updateScrollDirection() {
+            const container = document.getElementById('chatContainer');
+            const indicator = document.getElementById('scrollIndicator');
+            
+            if (scrollDirection === 'horizontal') {
+                container.classList.add('horizontal');
+                indicator.textContent = '↔ Horizontal';
+                indicator.style.background = '#ff6b6b';
+            } else {
+                container.classList.remove('horizontal');
+                indicator.textContent = '↕ Vertical';
+                indicator.style.background = '#9146ff';
+            }
+            
+            // Re-scroll to the appropriate position
+            setTimeout(scrollToLatest, 100);
+        }
+
+        function scrollToLatest() {
+            const container = document.getElementById('chatContainer');
+            if (scrollDirection === 'horizontal') {
+                container.scrollLeft = container.scrollWidth;
+            } else {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function connectToChannel() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if (!channel) {
+                alert('Please enter a channel name');
                 return;
             }
 
-            const darkMode = document.getElementById('darkModeCheckbox').checked;
-            let iframeUrl = `https://www.twitch.tv/embed/${channelName}/chat?parent=localhost`;
-            if (darkMode) {
-                iframeUrl += '&darkpopout=true';
+            if (ws) {
+                ws.close();
             }
 
-            const chatContainer = document.getElementById('chatContainer');
-            chatContainer.innerHTML = ''; // Clear previous iframe
+            currentChannel = channel;
+            
+            // Connect to Twitch IRC
+            ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+            
+            ws.onopen = () => {
+                // Send authentication (anonymous)
+                ws.send('PASS SCHMOOPIIE');
+                ws.send('NICK justinfan12345');
+                ws.send(`JOIN #${channel}`);
+                updateStatus('Connected', true);
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+            };
 
-            const iframe = document.createElement('iframe');
-            iframe.src = iframeUrl;
-            iframe.height = '500px';
-            iframe.width = '100%';
-            iframe.setAttribute('frameborder', '0');
-            iframe.setAttribute('scrolling', 'no');
-            iframe.setAttribute('allowfullscreen', 'true');
+            ws.onmessage = (event) => {
+                handleMessage(event.data);
+            };
 
-            chatContainer.appendChild(iframe);
+            ws.onclose = () => {
+                updateStatus('Disconnected', false);
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('Connection Error', false);
+            };
         }
 
-        document.getElementById('loadChatButton').addEventListener('click', loadTwitchChat);
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function handleMessage(data) {
+            const lines = data.split('\r\n');
+            
+            lines.forEach(line => {
+                if (line.startsWith('PING')) {
+                    ws.send('PONG :tmi.twitch.tv');
+                    return;
+                }
+
+                // Parse chat messages
+                if (line.includes('PRIVMSG')) {
+                    const match = line.match(/:(.+)!.+@.+\.tmi\.twitch\.tv PRIVMSG #.+ :(.+)/);
+                    if (match) {
+                        const [, username, message] = match;
+                        displayMessage(username, message);
+                    }
+                }
+            });
+        }
+
+        function displayMessage(username, message) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${currentStyle}`;
+            
+            // Create username span with random color
+            const usernameSpan = document.createElement('span');
+            usernameSpan.className = 'username';
+            usernameSpan.textContent = username + ':';
+            usernameSpan.style.color = generateUserColor(username);
+            
+            // Create message text span
+            const messageSpan = document.createElement('span');
+            messageSpan.className = 'message-text';
+            messageSpan.textContent = ' ' + message;
+            
+            messageDiv.appendChild(usernameSpan);
+            messageDiv.appendChild(messageSpan);
+            
+            container.appendChild(messageDiv);
+            
+            // Auto-scroll to latest message
+            scrollToLatest();
+            
+            // Limit messages to prevent memory issues
+            while (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function generateUserColor(username) {
+            const colors = [
+                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7',
+                '#dda0dd', '#98d8c8', '#ff7675', '#74b9ff', '#55a3ff',
+                '#fd79a8', '#fdcb6e', '#6c5ce7', '#a29bfe', '#fd79a8'
+            ];
+            
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function changeStyle() {
+            currentStyle = document.getElementById('styleSelect').value;
+            updateStyleControls();
+            
+            // Update existing messages
+            const messages = document.querySelectorAll('.chat-message');
+            messages.forEach(msg => {
+                msg.className = `chat-message ${currentStyle}`;
+            });
+        }
+
+        function updateStyleControls() {
+            const bubbleControls = document.getElementById('bubbleControls');
+            const vividControls = document.getElementById('vividControls');
+            
+            bubbleControls.classList.remove('active');
+            vividControls.classList.remove('active');
+            
+            if (currentStyle === 'bubble') {
+                bubbleControls.classList.add('active');
+                updateBubbleStyle();
+            } else if (currentStyle === 'vivid') {
+                vividControls.classList.add('active');
+                updateVividStyle();
+            }
+        }
+
+        function updateBubbleStyle() {
+            const opacity = document.getElementById('bubbleOpacity').value;
+            const radius = document.getElementById('bubbleRadius').value;
+            const width = document.getElementById('bubbleWidth').value;
+            const vPadding = document.getElementById('bubbleVPadding').value;
+            const hPadding = document.getElementById('bubbleHPadding').value;
+            const spacing = document.getElementById('bubbleSpacing').value;
+            const blur = document.getElementById('bubbleBlur').value;
+            
+            // Update display values
+            document.getElementById('bubbleOpacityValue').textContent = opacity + '%';
+            document.getElementById('bubbleRadiusValue').textContent = radius + 'px';
+            document.getElementById('bubbleWidthValue').textContent = width + '%';
+            document.getElementById('bubbleVPaddingValue').textContent = vPadding + 'px';
+            document.getElementById('bubbleHPaddingValue').textContent = hPadding + 'px';
+            document.getElementById('bubbleSpacingValue').textContent = spacing + 'px';
+            document.getElementById('bubbleBlurValue').textContent = blur + 'px';
+            
+            const style = `
+                .chat-message.bubble {
+                    background: rgba(255, 255, 255, ${opacity / 100}) !important;
+                    backdrop-filter: blur(${blur}px) !important;
+                    border-radius: ${radius}px !important;
+                    max-width: ${width}% !important;
+                    padding: ${vPadding}px ${hPadding}px !important;
+                }
+                #chatContainer:not(.horizontal) .chat-message.bubble {
+                    margin: ${spacing / 2}px 0 !important;
+                }
+                #chatContainer.horizontal .chat-message.bubble {
+                    margin: 0 ${spacing / 2}px !important;
+                }
+            `;
+            
+            updateDynamicStyle('bubbleStyle', style);
+        }
+
+        function updateVividStyle() {
+            const shadow = document.getElementById('vividShadow').value;
+            const border = document.getElementById('vividBorder').value;
+            const width = document.getElementById('vividWidth').value;
+            const vPadding = document.getElementById('vividVPadding').value;
+            const hPadding = document.getElementById('vividHPadding').value;
+            const spacing = document.getElementById('vividSpacing').value;
+            const radius = document.getElementById('vividRadius').value;
+            
+            // Update display values
+            document.getElementById('vividShadowValue').textContent = shadow + 'px';
+            document.getElementById('vividBorderValue').textContent = border + 'px';
+            document.getElementById('vividWidthValue').textContent = width + '%';
+            document.getElementById('vividVPaddingValue').textContent = vPadding + 'px';
+            document.getElementById('vividHPaddingValue').textContent = hPadding + 'px';
+            document.getElementById('vividSpacingValue').textContent = spacing + 'px';
+            document.getElementById('vividRadiusValue').textContent = radius + 'px';
+            
+            const style = `
+                .chat-message.vivid {
+                    box-shadow: 0 4px ${shadow}px rgba(102, 126, 234, 0.3) !important;
+                    border-left: ${border}px solid #9146ff !important;
+                    border-radius: ${radius}px !important;
+                    max-width: ${width}% !important;
+                    padding: ${vPadding}px ${hPadding}px !important;
+                }
+                #chatContainer:not(.horizontal) .chat-message.vivid {
+                    margin: ${spacing / 2}px 0 !important;
+                }
+                #chatContainer.horizontal .chat-message.vivid {
+                    margin: 0 ${spacing / 2}px !important;
+                }
+            `;
+            
+            updateDynamicStyle('vividStyle', style);
+        }
+
+        function updateDynamicStyle(id, css) {
+            let styleEl = document.getElementById(id);
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = id;
+                document.head.appendChild(styleEl);
+            }
+            styleEl.textContent = css;
+        }
+
+        function updateStatus(status, connected) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = status + (connected ? ` to #${currentChannel}` : '');
+            statusEl.className = connected ? 'status' : 'status disconnected';
+        }
+
+        function clearChat() {
+            document.getElementById('chatContainer').innerHTML = '';
+        }
     </script>
 </body>
 </html>
