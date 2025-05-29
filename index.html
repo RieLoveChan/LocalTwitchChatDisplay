@@ -288,22 +288,24 @@
 
         .toggle-controls button {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            background-color: #e0e0e0; 
-            color: #333; 
-            border: 1px solid rgba(0,0,0,0.1); 
-            border-radius: 8px; 
-            padding: 8px 10px; /* Adjusted padding for icon */
-            font-size: 20px; /* Increased font size for icon */
-            line-height: 1; /* Helps with icon centering */
+            background: transparent;
+            border: none;
+            color: #bbb; /* Light color for icon */
+            padding: 5px; /* Adjust as needed */
+            font-size: 24px; /* Slightly larger icon for better clickability without background */
+            line-height: 1; 
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease; 
+            transition: transform 0.1s ease, color 0.2s ease;
+            /* Remove box-shadow if any was implicitly inherited or applied */
+            box-shadow: none;
         }
         .toggle-controls button:hover {
-            background-color: #d5d5d5;
+            color: #fff; /* Brighter on hover */
+            transform: scale(1.1); /* Slight zoom on hover */
         }
         .toggle-controls button:active {
-            transform: scale(0.98);
-            background-color: #cccccc;
+            transform: scale(0.95); /* Slightly smaller on click */
+            color: #aaa; /* Dim slightly on click or keep #fff */
         }
 
         .emote {
@@ -531,6 +533,7 @@
         <div><input type="checkbox" id="showTimestamps" onchange="toggleAllTimestamps(this.checked)"> <label for="showTimestamps">Show Timestamps</label></div> <!-- Removed inline style, will be handled by .controls label -->
         
         <div class="style-controls" id="generalStyleControls">
+            <label for="messageOpacity">Msg Opacity: <input type="range" id="messageOpacity" min="0" max="100" value="100" step="5" onchange="updateMessageOpacity()"> <span id="messageOpacityValue">100%</span></label>
             <label>Corner Radius: <input type="range" id="generalRadius" min="5" max="30" value="20" onchange="updateGeneralStyle()"><span id="generalRadiusValue">20px</span></label>
             <label>Max Width: <input type="range" id="generalMaxWidth" min="50" max="100" value="80" onchange="updateGeneralStyle()"><span id="generalMaxWidthValue">80%</span></label>
             <label>Vertical Padding: <input type="range" id="generalVPadding" min="5" max="25" value="12" onchange="updateGeneralStyle()"><span id="generalVPaddingValue">12px</span></label>
@@ -579,6 +582,7 @@
             updateVividStyle();
             updateNicoSpeed(); // Initialize Nico speed display
             updateChatScale(); // Initialize chat scale
+            updateMessageOpacity(); // Initialize message opacity
             // Set initial timestamp visibility based on the checkbox state (default: hidden)
             toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
             connectToChannel(); // Attempt to connect to the default channel
@@ -591,6 +595,26 @@
             const controls = document.getElementById('controls');
             controlsVisible = !controlsVisible; // Flip the visibility state
             controls.style.display = controlsVisible ? 'flex' : 'none'; // Apply display style
+        }
+
+        /**
+         * Updates the global opacity for all chat messages based on the slider.
+         */
+        function updateMessageOpacity() {
+            const opacitySlider = document.getElementById('messageOpacity');
+            const opacityValueDisplay = document.getElementById('messageOpacityValue');
+
+            if (opacitySlider && opacityValueDisplay) {
+                const opacityValue = parseInt(opacitySlider.value); // Value from 0-100
+                opacityValueDisplay.textContent = opacityValue + '%';
+
+                const newOpacity = opacityValue / 100; // Convert to 0.0 - 1.0
+                
+                // Apply this opacity to all chat messages globally
+                // Using !important to ensure it overrides any specific theme's opacity setting on the message div itself.
+                const styleContent = `.chat-message { opacity: ${newOpacity} !important; }`;
+                updateDynamicStyle('globalMessageOpacityStyle', styleContent);
+            }
         }
 
         /**
