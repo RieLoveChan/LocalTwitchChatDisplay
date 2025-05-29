@@ -290,10 +290,11 @@
             color: #333; 
             border: 1px solid rgba(0,0,0,0.1); 
             border-radius: 8px; 
-            padding: 10px 15px; 
-            font-size: 15px; 
+            padding: 8px 10px; /* Adjusted padding for icon */
+            font-size: 20px; /* Increased font size for icon */
+            line-height: 1; /* Helps with icon centering */
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease; /* Added transition */
+            transition: background-color 0.2s ease, transform 0.1s ease; 
         }
         .toggle-controls button:hover {
             background-color: #d5d5d5;
@@ -424,11 +425,64 @@
         transform: translateX(-130vw); 
     }
 }
+
+/* Nico Speed Controls Styling */
+#nicoControls {
+    display: none; /* Initially hidden, shown by JS when Nico scroll is active */
+    /* Similar styling to .style-controls for consistency, or a general class can be made */
+    background: rgba(230, 230, 230, 0.85); /* Match .style-controls background */
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 100%; /* Or appropriate width */
+    box-sizing: border-box;
+}
+#nicoControls label { /* Ensure label styling matches others */
+    color: #333;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+#nicoControls input[type="range"] { /* Ensure slider styling matches others */
+    /* Copy styles from .style-controls input[type="range"] or create a shared class */
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ddd;
+    height: 8px;
+    border-radius: 4px;
+    width: 120px; /* Or adjust */
+    margin: 0 10px;
+}
+#nicoControls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#nicoControls input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+#nicoControls span { /* Ensure span styling for value matches others */
+    min-width: 40px;
+    text-align: right;
+    color: #007aff;
+    font-weight: 500;
+}
 </style>
 </head>
 <body>
     <div class="toggle-controls">
-        <button onclick="toggleControls()">Toggle Controls</button>
+        <button onclick="toggleControls()" title="Toggle Controls">🎛️</button>
     </div>
 
     <div class="controls" id="controls">
@@ -486,6 +540,10 @@
             <label>Shadow Intensity: <input type="range" id="vividShadow" min="0" max="50" value="15" onchange="updateVividStyle()"><span id="vividShadowValue">15px</span></label>
             <label>Border Width: <input type="range" id="vividBorder" min="0" max="8" value="4" onchange="updateVividStyle()"><span id="vividBorderValue">4px</span></label>
         </div>
+
+        <div class="style-controls" id="nicoControls"> <!-- This will inherit .style-controls styling -->
+            <label for="nicoSpeed">Nico Speed: <input type="range" id="nicoSpeed" min="3" max="15" value="8" step="1" onchange="updateNicoSpeed()"> <span id="nicoSpeedValue">8s</span></label>
+        </div>
     </div>
 
     <div id="chatContainer"></div>
@@ -513,6 +571,7 @@
             // Initialize display values for style-specific sliders
             updateGeneralStyle(); 
             updateVividStyle();
+            updateNicoSpeed(); // Initialize Nico speed display
             // Set initial timestamp visibility based on the checkbox state (default: hidden)
             toggleAllTimestamps(document.getElementById('showTimestamps').checked); 
             connectToChannel(); // Attempt to connect to the default channel
@@ -525,6 +584,20 @@
             const controls = document.getElementById('controls');
             controlsVisible = !controlsVisible; // Flip the visibility state
             controls.style.display = controlsVisible ? 'flex' : 'none'; // Apply display style
+        }
+
+        /**
+         * Updates the display value for the Nico Scroll speed slider.
+         */
+        function updateNicoSpeed() {
+            const speedSlider = document.getElementById('nicoSpeed');
+            if (speedSlider) { 
+                const speedValueDisplay = document.getElementById('nicoSpeedValue');
+                const duration = speedSlider.value;
+                if (speedValueDisplay) {
+                    speedValueDisplay.textContent = duration + 's';
+                }
+            }
         }
 
         /**
@@ -839,10 +912,11 @@
         function updateStyleControls() {
             const generalControls = document.getElementById('generalStyleControls');
             const vividControls = document.getElementById('vividControls');
+            const nicoControls = document.getElementById('nicoControls');
             
             // Hide all style-specific controls first to ensure a clean state.
-            // generalControls.classList.remove('active'); // General is always active now
             vividControls.classList.remove('active');
+            nicoControls.classList.remove('active'); // Ensure Nico controls are hidden by default
             
             // Activate general controls for all styles (it should always be visible if any style is selected)
             generalControls.classList.add('active');
@@ -852,11 +926,14 @@
             if (currentStyle === 'vivid') {
                 vividControls.classList.add('active');
                 updateVividStyle(); // Ensure sliders and values reflect current vivid style state.
-            } else if (currentStyle === 'bubble') {
-                // Bubble specific controls were removed, but if we had a separate bubble panel, we'd activate it here.
-                // For now, bubble uses only general controls.
+            } 
+            // Note: 'bubble' and other styles only use general controls now.
+            
+            // Show Nico controls only if Nico scroll direction is active
+            if (scrollDirection === 'nico') {
+                nicoControls.classList.add('active');
+                updateNicoSpeed(); // Initialize/update speed display when shown
             }
-            // Other styles (e.g., 'light', 'pastel') might not have specific controls beyond general.
         }
 
         /**
