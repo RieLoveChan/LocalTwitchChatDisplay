@@ -282,7 +282,7 @@
             background: rgba(40, 40, 40, 0.85); 
             padding: 8px; /* Slightly smaller padding */
             border-radius: 8px;
-            z-index: 1000;
+            z-index: 1001; /* Ensure it's above the main controls panel */
         }
 
         .toggle-controls button {
@@ -428,7 +428,6 @@
         </div>
         
         <button id="connectBtn" onclick="connectToChannel()">Connect</button>
-        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
         
         <select id="styleSelect" onchange="changeStyle()">
             <option value="bubble">Bubble</option>
@@ -568,6 +567,10 @@
                 return;
             }
 
+            const connectButton = document.getElementById('connectBtn');
+            connectButton.textContent = 'Connecting...';
+            connectButton.disabled = true;
+
             // Close existing connection if any
             if (ws) {
                 ws.close();
@@ -604,8 +607,12 @@
                 ws.send(`JOIN #${channel}`);   // Join the specified channel
 
                 updateStatus('Connected', true); // Update UI status to 'Connected'
-                document.getElementById('connectBtn').disabled = true; // Disable connect button
-                document.getElementById('disconnectBtn').disabled = false; // Enable disconnect button
+                
+                // Update the button to be a "Disconnect" button
+                const connectButton = document.getElementById('connectBtn');
+                connectButton.textContent = 'Disconnect';
+                connectButton.onclick = disconnect; // Change onclick to call disconnect()
+                connectButton.disabled = false; // Enable the button
             };
 
             /**
@@ -622,8 +629,13 @@
              */
             ws.onclose = () => {
                 updateStatus('Disconnected', false); // Update UI status
-                document.getElementById('connectBtn').disabled = false; // Enable connect button
-                document.getElementById('disconnectBtn').disabled = true; // Disable disconnect button
+                
+                // Update the button to be a "Connect" button
+                const connectButton = document.getElementById('connectBtn');
+                connectButton.textContent = 'Connect';
+                connectButton.onclick = connectToChannel; // Change onclick back to connectToChannel()
+                connectButton.disabled = false; // Ensure it's enabled
+
                 ws = null; // Clear WebSocket object to allow for new connections
             };
 
@@ -644,8 +656,8 @@
         function disconnect() {
             if (ws) {
                 ws.close();
-                // ws is set to null in the ws.onclose event handler.
             }
+            // UI updates (button text, state, onclick) are now handled by ws.onclose
         }
 
         /**
