@@ -922,20 +922,24 @@
                 }
                 messageDiv.style.left = (chatContainer.offsetWidth / currentScale) + 'px'; // Start off-screen right, adjusted for scale
 
-                // Get duration from the Nico Speed slider
-                let nicoDuration = 8; // Default duration
+                // Get base duration from the Nico Speed slider
+                let baseDuration = 8; // Default base duration
                 const nicoSpeedSlider = document.getElementById('nicoSpeed');
                 if (nicoSpeedSlider) {
                     let sliderValue = parseFloat(nicoSpeedSlider.value);
-                    // Validate against slider's min/max attributes if they exist, otherwise use reasonable defaults
-                    const minDuration = nicoSpeedSlider.hasAttribute('min') ? parseFloat(nicoSpeedSlider.min) : 1;
-                    const maxDuration = nicoSpeedSlider.hasAttribute('max') ? parseFloat(nicoSpeedSlider.max) : 30;
+                    const minSliderVal = nicoSpeedSlider.hasAttribute('min') ? parseFloat(nicoSpeedSlider.min) : 3; // Slider's own min
+                    const maxSliderVal = nicoSpeedSlider.hasAttribute('max') ? parseFloat(nicoSpeedSlider.max) : 15; // Slider's own max
 
-                    if (!isNaN(sliderValue) && sliderValue >= minDuration && sliderValue <= maxDuration) {
-                        nicoDuration = sliderValue;
+                    if (!isNaN(sliderValue) && sliderValue >= minSliderVal && sliderValue <= maxSliderVal) {
+                        baseDuration = sliderValue;
                     }
                 }
-                messageDiv.style.animationDuration = nicoDuration + 's';
+                
+                const randomVariation = (Math.random() * 3.0) - 1.5; // Random number between -1.5 and +1.5
+                let finalDuration = baseDuration + randomVariation;
+                finalDuration = Math.max(2.0, finalDuration); // Ensure minimum duration of 2.0s
+                
+                messageDiv.style.animationDuration = finalDuration.toFixed(2) + 's';
                 
                 chatContainer.appendChild(messageDiv);
 

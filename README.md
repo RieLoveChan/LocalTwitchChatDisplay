@@ -15,7 +15,7 @@ A single HTML file application that allows you to view Twitch chat from any chan
     *   **Light:** A clean, grayscale theme with a light background.
     *   **Pastel:** Soft, pastel-colored messages.
     *   **Twitch:** A style that mimics the default Twitch chat appearance.
-    *   **PNM :** A high-contrast, vibrant style.
+    *   **PNM (Party-Night-Mode):** A high-contrast, vibrant style.
 *   **Style Customization:**
     *   **General Controls:** Adjust common layout properties for *all* message styles using sliders for:
         *   Max Message Width
